@@ -4,6 +4,8 @@ var mnemonic = "candy maple cake sugar pudding cream honey rich smooth crumble s
 module.exports = {
   networks: {
     development: {
+      // I removed this due to an issue with tx nonce - see this post:
+      // https://stackoverflow.com/questions/45585735/testrpc-ganache-the-tx-doesnt-have-the-correct-nonce
       // provider: function() {
       //   return new HDWalletProvider(mnemonic, "http://127.0.0.1:7545/", 0, 50);
       // },
