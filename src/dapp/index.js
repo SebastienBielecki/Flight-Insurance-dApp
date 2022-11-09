@@ -2,6 +2,7 @@
 import DOM from './dom';
 import Contract from './contract';
 import './flightsurety.css';
+import {Flights} from "../../config/flightsData";
 
 
 (async() => {
@@ -44,6 +45,7 @@ function display(title, description, results) {
         section.appendChild(row);
     })
     displayDiv.append(section);
+    
 
 }
 

@@ -18,6 +18,9 @@ contract FlightSuretyApp {
 
     // Declare varialble of Data Contract type
     FlightSuretyData flightSuretyData;
+    uint256 private minFunding;
+    bool operational = true;
+    address private dataContractAddress;
 
     // Flight status codees
     uint8 private constant STATUS_CODE_UNKNOWN = 0;
@@ -27,10 +30,11 @@ contract FlightSuretyApp {
     uint8 private constant STATUS_CODE_LATE_TECHNICAL = 40;
     uint8 private constant STATUS_CODE_LATE_OTHER = 50;
 
-    address private contractOwner;          // Account used to deploy contract
+    address public contractOwner;          // Account used to deploy contract
 
     struct Flight {
-        bool isRegistered;
+        //bool isRegistered;
+        string flight;
         uint8 statusCode;
         uint256 updatedTimestamp;        
         address airline;
@@ -66,6 +70,28 @@ contract FlightSuretyApp {
         _;
     }
 
+    modifier requireIsRegistered() {
+        ( , , bool _isRegistered, ) = flightSuretyData.getAirlineInfo(msg.sender);
+        require(_isRegistered, "Caller is not registered");
+        _;
+    }
+
+    modifier requireHaveFunded() {
+        ( , , , bool _hasFunded) = flightSuretyData.getAirlineInfo(msg.sender);
+        require(_hasFunded, "Caller has not funded");
+        _;
+    }
+
+    modifier isPayingEnough() {
+        require(msg.value >= minFunding, "Funding insufficient");
+        _;
+    }
+
+    modifier requireHasNotVoted(address candidate, address voter) {
+        require(flightSuretyData.hasNotVoted(candidate, voter), "caller has already voted");
+        _;
+    }
+
     /********************************************************************************************/
     /*                                       CONSTRUCTOR                                        */
     /********************************************************************************************/
@@ -77,15 +103,41 @@ contract FlightSuretyApp {
     constructor(address _dataContract) public {
         contractOwner = msg.sender;
         flightSuretyData = FlightSuretyData(_dataContract);
+        minFunding = 1 ether;
+        dataContractAddress = _dataContract;
     }
 
     /********************************************************************************************/
     /*                                       UTILITY FUNCTIONS                                  */
     /********************************************************************************************/
 
-    function isOperational() public pure returns(bool) {
-        return true;  // Modify to call data contract's status
+    function isOperational() public view returns(bool) {
+        return operational;  
     }
+
+    function setOperatingStatus(bool mode) public requireContractOwner {
+        operational = mode;
+    }
+
+    function testAuthContractAccess() returns (bool) {
+        return flightSuretyData.testAuthContractAccess();
+    }
+
+    function getAirlineInfo(address airlineAddress) returns (uint, string, bool, bool) {
+        return flightSuretyData.getAirlineInfo(airlineAddress);
+    }
+
+    function getNumberOfFundingAirlines() public view returns (uint) {
+        (uint number) = flightSuretyData.getNumberOfFundingAirlines();
+        return number;
+    }
+
+    function getVotesCount(address candidate) public view returns (uint) {
+        return flightSuretyData.getVotesCount(candidate);
+    }
+
+    
+
 
     /********************************************************************************************/
     /*                                     SMART CONTRACT FUNCTIONS                             */
@@ -96,9 +148,26 @@ contract FlightSuretyApp {
     * @dev Add an airline to the registration queue
     *
     */   
-    function registerAirline(address _newAirlineAddress) external pure returns(bool success, uint256 votes) {
-        flightSuretyData.registerAirline(_newAirlineAddress);
+    function registerAirline(address _newAirlineAddress, string _airlineName) external requireHaveFunded requireHasNotVoted(_newAirlineAddress, msg.sender) returns(bool success, uint256 votes) {
+        uint numberOfAirlines = getNumberOfFundingAirlines();
+        // require(numberOfAirlines < 4, "more than 4 airlines");
+        if (numberOfAirlines < 4) {
+            flightSuretyData.registerAirline(_newAirlineAddress, _airlineName);
+        } else {
+            
+            flightSuretyData.registerVote(_newAirlineAddress, msg.sender);
+            uint vote = flightSuretyData.getVotesCount(_newAirlineAddress);
+            //require(true == false, vote);
+            if (vote.mul(2) >= numberOfAirlines) {
+                flightSuretyData.registerAirline(_newAirlineAddress, _airlineName);
+            }
+        }
         return (success, 0);
+    }
+
+    function fund() public payable requireIsRegistered isPayingEnough {
+        dataContractAddress.transfer(msg.value);
+        flightSuretyData.fund(msg.sender);
     }
 
 
@@ -106,8 +175,12 @@ contract FlightSuretyApp {
     * @dev Register a future flight for insuring.
     *
     */  
-    function registerFlight() external pure {
-
+    function registerFlight(address _airline, uint256 _timestamp, uint8 _statusCode, string _flight) external {
+        bytes32 key = getFlightKey(_airline, _flight, _timestamp);
+        flights[key].flight = _flight;
+        flights[key].airline = _airline;
+        flights[key].statusCode = _statusCode;
+        flights[key].updatedTimestamp = _timestamp;
     }
     
    /**
@@ -268,5 +341,13 @@ contract FlightSuretyApp {
 
 // Data contract interface
 contract FlightSuretyData {
-
+    function registerAirline(address newAirlineAddress, string airlineName) external;
+    function getNumberOfRegisteredAirlines() external view;
+    function getNumberOfFundingAirlines() external view returns (uint);
+    function getAirlineInfo(address airlineAddress) public view returns (uint, string, bool, bool);
+    function fund(address caller) external payable;
+    function testAuthContractAccess() returns (bool);
+    function getVotesCount(address airlineAddress) external view returns(uint);
+    function hasNotVoted(address candidate, address voter) external view returns (bool);
+    function registerVote(address candidate, address voter) external;
 }

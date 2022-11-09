@@ -11,7 +11,7 @@ contract FlightSuretyData {
     /*                                       DATA VARIABLES                                     */
     /********************************************************************************************/
 
-    uint256 public constant MINIMUM_FUNDING = 10 ether;
+    
     address private constant FIRST_AIRLINE_ADDRESS = 0xf17f52151EbEF6C7334FAD080c5704D77216b732;
     address private contractOwner;                                     // Account used to deploy contract
     bool private operational = true;                                    // Blocks all state changes throughout the contract if false
@@ -26,13 +26,19 @@ contract FlightSuretyData {
         uint256 approvalCount;
         mapping(address => bool) voteMap;
     }
-    uint256 public registeredAirlinesTotal;
-    uint256 public haveFundedAirlinesTotal;
+    uint256 private registeredAirlinesTotal;
+    uint256 private haveFundedAirlinesTotal;
 
     // This map will reference an airline address to its profile
     mapping(address => Airlines) private airlines;
     // This map will keep track of number of approvers to register a new airline
     mapping(address => Votes) public votesToRegister;
+
+    struct Flights {
+        uint key;
+        
+    }
+
     /********************************************************************************************/
     /*                                       EVENT DEFINITIONS                                  */
     /********************************************************************************************/
@@ -80,23 +86,8 @@ contract FlightSuretyData {
         _;
     }
 
-    modifier registeredAirlineOnly() {
-        require(airlines[msg.sender].isRegistered, "Airline is not registered");
-        _;
-    }
-
-    modifier hasFundedOnly() {
-        require(airlines[msg.sender].hasFunded, "Airline has not paid the initial funding");
-        _;
-    }
-
-    modifier isFundingEnough() {
-        require(msg.value >= MINIMUM_FUNDING, "Funding is not sufficient");
-        _;
-    }
-
     modifier requireAuthorizedAppContract() {
-        require(authorizedAppContracts[msg.sender]);
+        require(authorizedAppContracts[msg.sender], "Calling contract is not authorized");
         _;
     }
 
@@ -124,6 +115,47 @@ contract FlightSuretyData {
         operational = mode;
     }
 
+     function authorizeAppContract(address _dataContractAddress) public requireContractOwner {
+        authorizedAppContracts[_dataContractAddress] = true;
+    }
+    // De-Authorize a Data Contract to call functions of this Data Contract
+    function deAuthorizeAppContract(address _dataContractAddress) public requireContractOwner {
+        authorizedAppContracts[_dataContractAddress] = false;
+    }
+
+    function testAuthContractAccess() external requireAuthorizedAppContract returns (bool){
+        return true;
+    }
+
+    function isAppContractAuthorized(address appContract) public view returns (bool) {
+        return authorizedAppContracts[appContract];
+    }
+
+    function getNumberOfRegisteredAirlines() external view requireAuthorizedAppContract returns(uint){
+        return registeredAirlinesTotal;
+    }
+
+    function getNumberOfFundingAirlines() external view requireAuthorizedAppContract returns(uint){
+        return haveFundedAirlinesTotal;
+    }
+
+    function getAirlineInfo(address airlineAddress) external view requireAuthorizedAppContract returns(uint, string, bool, bool) {
+        return (airlines[airlineAddress].id, airlines[airlineAddress].name, airlines[airlineAddress].isRegistered, airlines[airlineAddress].hasFunded);
+    }
+
+    function getVotesCount(address airlineAddress) external view returns(uint) {
+        return votesToRegister[airlineAddress].approvalCount;
+    }
+
+    function hasNotVoted(address candidate, address voter) external view returns (bool) {
+        return !votesToRegister[candidate].voteMap[voter];
+    }
+
+    function registerVote(address candidate, address voter) external {
+        votesToRegister[candidate].voteMap[voter] = true;
+        votesToRegister[candidate].approvalCount =  votesToRegister[candidate].approvalCount.add(1);
+    }
+
     /********************************************************************************************/
     /*                                     SMART CONTRACT FUNCTIONS                             */
     /********************************************************************************************/
@@ -133,27 +165,13 @@ contract FlightSuretyData {
     *      Can only be called from FlightSuretyApp contract
     *
     */   
-    function registerAirline(address newAirlineAddress, string airlineName) external requireIsOperational hasFundedOnly {
+    function registerAirline(address newAirlineAddress, string airlineName) external requireIsOperational requireAuthorizedAppContract {
         //require(airlines[msg.sender].hasFunded, "Calling arline has not funded and cannot register a new airline");
-        if (registeredAirlinesTotal < 4) {
             registeredAirlinesTotal = registeredAirlinesTotal.add(1);
             airlines[newAirlineAddress].id = registeredAirlinesTotal;
             airlines[newAirlineAddress].name = airlineName;
             airlines[newAirlineAddress].isRegistered = true;
             airlines[newAirlineAddress].hasFunded = false;
-
-        } else {
-            require(!votesToRegister[newAirlineAddress].voteMap[msg.sender], "You have already voted");
-            votesToRegister[newAirlineAddress].approvalCount = votesToRegister[newAirlineAddress].approvalCount.add(1);
-            if (votesToRegister[newAirlineAddress].approvalCount.mul(2) >= haveFundedAirlinesTotal) {
-                votesToRegister[newAirlineAddress].voteMap[msg.sender] = true;
-                registeredAirlinesTotal = registeredAirlinesTotal.add(1);
-                airlines[newAirlineAddress].id = registeredAirlinesTotal;
-                airlines[newAirlineAddress].name = airlineName;
-                airlines[newAirlineAddress].isRegistered = true;
-                airlines[newAirlineAddress].hasFunded = false;
-            }
-        }
     }
 
 
@@ -184,8 +202,8 @@ contract FlightSuretyData {
     *      resulting in insurance payouts, the contract should be self-sustaining
     *
     */   
-    function fund() public payable registeredAirlineOnly isFundingEnough requireIsOperational {
-        airlines[msg.sender].hasFunded = true;
+    function fund(address caller) external payable requireIsOperational requireAuthorizedAppContract {
+        airlines[caller].hasFunded = true;
         haveFundedAirlinesTotal = haveFundedAirlinesTotal.add(1);
     }
 
@@ -194,27 +212,17 @@ contract FlightSuretyData {
     }
 
     // Authorize a new Data Contract to call functions of this Data Contract
-    function authorizeAppContracts(address _dataContractAddress) public requireContractOwner {
-        authorizedAppContracts[_dataContractAddress] = true;
-    }
-    // De-Authorize a Data Contract to call functions of this Data Contract
-    function deAuthorizeAppContracts(address _dataContractAddress) public requireContractOwner {
-        authorizedAppContracts[_dataContractAddress] = false;
-    }
+   
 
-    function getAirlineInfo(address airlineAddress) public view returns(uint, string, bool, bool) {
-        return (airlines[airlineAddress].id, airlines[airlineAddress].name, airlines[airlineAddress].isRegistered, airlines[airlineAddress].hasFunded);
-    }
+    
 
-    function getVotesCount(address airlineAddress) public view returns(uint) {
-        return votesToRegister[airlineAddress].approvalCount;
-    }
+    
    /**
     * @dev Fallback function for funding smart contract.
     *
     */
     function() external payable {
-        fund();
+        //fund;
     }
 
 
