@@ -11,7 +11,6 @@ contract FlightSuretyData {
     /*                                       DATA VARIABLES                                     */
     /********************************************************************************************/
 
-    
     address private constant FIRST_AIRLINE_ADDRESS = 0xf17f52151EbEF6C7334FAD080c5704D77216b732;
     address private contractOwner;                                     // Account used to deploy contract
     bool private operational = true;                                    // Blocks all state changes throughout the contract if false
@@ -88,9 +87,14 @@ contract FlightSuretyData {
         _;
     }
 
+
+
     /********************************************************************************************/
     /*                                       UTILITY FUNCTIONS                                  */
     /********************************************************************************************/
+
+
+   
 
     /**
     * @dev Get operating status of contract
@@ -164,12 +168,8 @@ contract FlightSuretyData {
     *
     */   
     function registerAirline(address newAirlineAddress, string airlineName) external requireIsOperational requireAuthorizedAppContract {
-        //require(airlines[msg.sender].hasFunded, "Calling arline has not funded and cannot register a new airline");
-            registeredAirlinesTotal = registeredAirlinesTotal.add(1);
-            airlines[newAirlineAddress].id = registeredAirlinesTotal;
-            airlines[newAirlineAddress].name = airlineName;
-            airlines[newAirlineAddress].isRegistered = true;
-            airlines[newAirlineAddress].hasFunded = false;
+        registeredAirlinesTotal = registeredAirlinesTotal.add(1);
+        airlines[newAirlineAddress] = Airlines(registeredAirlinesTotal, airlineName, true, false); 
     }
 
 

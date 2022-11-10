@@ -2,6 +2,8 @@ var HDWalletProvider = require("truffle-hdwallet-provider");
 var mnemonic = "candy maple cake sugar pudding cream honey rich smooth crumble sweet treat";
 
 module.exports = {
+  // change build directory so that the build is accesible to the React App
+  contracts_build_directory: "./src/dapp/src/build/contracts",
   networks: {
     development: {
       // I removed this due to an issue with tx nonce - see this post:

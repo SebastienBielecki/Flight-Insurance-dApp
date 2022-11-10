@@ -211,7 +211,7 @@ it(`Enabled airline can register a new flight`, async function () {
 
   let key = await config.flightSuretyApp.getFlightKey(newFlight.airline, newFlight.flight, newFlight.updatedTimestamp);
   //console.log("key: ", key);
-  await config.flightSuretyApp.registerFlight(newFlight.airline, newFlight.updatedTimestamp, newFlight.statusCode, newFlight.flight);
+  await config.flightSuretyApp.registerFlight(newFlight.airline, newFlight.updatedTimestamp, newFlight.statusCode, newFlight.flight, {from: accounts[1]});
   let result = await config.flightSuretyApp.getFlight.call(key);
   // let result = await config.flightSuretyApp.contractOwner.call()
   //console.log("flight: ", result);

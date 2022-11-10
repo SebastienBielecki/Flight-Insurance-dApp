@@ -16,7 +16,10 @@ module.exports = function(deployer) {
                             appAddress: FlightSuretyApp.address
                         }
                     }
-                    fs.writeFileSync(__dirname + '/../src/dapp/config.json',JSON.stringify(config, null, '\t'), 'utf-8');
+                    // changing file directory so that it is accesible to React App
+                    fs.writeFileSync(__dirname + '/../src/dapp/src/config.json',JSON.stringify(config, null, '\t'), 'utf-8');
+                    // this is the initial one
+                    //fs.writeFileSync(__dirname + '/../src/dapp/config.json',JSON.stringify(config, null, '\t'), 'utf-8');
                     fs.writeFileSync(__dirname + '/../src/server/config.json',JSON.stringify(config, null, '\t'), 'utf-8');
                 });
     });

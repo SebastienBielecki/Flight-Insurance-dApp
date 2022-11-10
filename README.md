@@ -20,12 +20,17 @@ To run truffle tests:
 
 To use the dapp:
 
-`truffle migrate`
+original form boilerplate
+`truffle migrate --reset`
 `npm run dapp`
+
+now, due to change to React
+cd dapp
+npm start
 
 To view dapp:
 
-`http://localhost:8000`
+`http://localhost:3000`
 
 ## Develop Server
 

@@ -21,6 +21,7 @@ contract FlightSuretyApp {
     uint256 private minFunding;
     bool operational = true;
     address private dataContractAddress;
+    uint256 private dummy = 0;
 
     // Flight status codees
     uint8 private constant STATUS_CODE_UNKNOWN = 0;
@@ -40,6 +41,8 @@ contract FlightSuretyApp {
         address airline;
     }
     mapping(bytes32 => Flight) public flights;
+
+    event FlightRegistered(address airline, string flight, uint256 timestamp);
 
  
     /********************************************************************************************/
@@ -112,6 +115,13 @@ contract FlightSuretyApp {
     /*                                       UTILITY FUNCTIONS                                  */
     /********************************************************************************************/
 
+    function changeDummy(uint256 number) public {
+        dummy = number;
+    }
+
+     function getDummy() public view returns (uint256) {
+        return dummy;
+    }
     function isOperational() public view returns(bool) {
         return operational;  
     }
@@ -124,7 +134,7 @@ contract FlightSuretyApp {
         return flightSuretyData.testAuthContractAccess();
     }
 
-    function getAirlineInfo(address airlineAddress) returns (uint, string, bool, bool) {
+    function getAirlineInfo(address airlineAddress) public view returns (uint, string, bool, bool) {
         return flightSuretyData.getAirlineInfo(airlineAddress);
     }
 
@@ -180,13 +190,10 @@ contract FlightSuretyApp {
     * @dev Register a future flight for insuring.
     *
     */  
-    function registerFlight(address _airline, uint256 _timestamp, uint8 _statusCode, string _flight) external returns (bytes32) {
+    function registerFlight(address _airline, uint256 _timestamp, uint8 _statusCode, string _flight) requireHaveFunded {
         bytes32 key = getFlightKey(_airline, _flight, _timestamp);
-        flights[key].flight = _flight;
-        flights[key].airline = _airline;
-        flights[key].statusCode = _statusCode;
-        flights[key].updatedTimestamp = _timestamp;
-        return key;
+        flights[key] = Flight(_flight, _statusCode, _timestamp, _airline);
+        emit FlightRegistered(_airline, _flight, _timestamp);
     }
     
    /**
