@@ -197,11 +197,27 @@ it(`5th airline needs 50% consensus to get registered. Voters cannot vote multip
   assert.equal(votes, 2, "2 votes should be registered")
   airlineInfo = await config.flightSuretyApp.getAirlineInfo.call(accounts[5]);
   assert.equal(airlineInfo[2], true, `airline 5 isn't registered, although consensus was reached`)
-
-
-
 });
 
-  
+it(`Enabled airline can register a new flight`, async function () {
+
+  let newFlight = {
+    flight: "Mexico - Paris",
+    airline: accounts[1],
+    updatedTimestamp: 10,
+    //updatedTimestamp: Math.floor(new Date('2012.08.10').getTime() / 1000),
+    statusCode: 0
+  }
+
+  let key = await config.flightSuretyApp.getFlightKey(newFlight.airline, newFlight.flight, newFlight.updatedTimestamp);
+  //console.log("key: ", key);
+  await config.flightSuretyApp.registerFlight(newFlight.airline, newFlight.updatedTimestamp, newFlight.statusCode, newFlight.flight);
+  let result = await config.flightSuretyApp.getFlight.call(key);
+  // let result = await config.flightSuretyApp.contractOwner.call()
+  //console.log("flight: ", result);
+  assert.equal(result[0], accounts[1], "registered flight has not the correct airline")
+  assert.equal(result[1], "Mexico - Paris", "registered flight has not the correct itinerary")
+
+});
 
 });

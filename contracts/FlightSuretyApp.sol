@@ -39,7 +39,7 @@ contract FlightSuretyApp {
         uint256 updatedTimestamp;        
         address airline;
     }
-    mapping(bytes32 => Flight) private flights;
+    mapping(bytes32 => Flight) public flights;
 
  
     /********************************************************************************************/
@@ -105,6 +105,7 @@ contract FlightSuretyApp {
         flightSuretyData = FlightSuretyData(_dataContract);
         minFunding = 1 ether;
         dataContractAddress = _dataContract;
+        flights[0x56556e7e8717edcb60f5aa0d49de71cca39e2eca163bf1e2bca5fe33128b872d].flight = "Mexico - Paris";
     }
 
     /********************************************************************************************/
@@ -134,6 +135,10 @@ contract FlightSuretyApp {
 
     function getVotesCount(address candidate) public view returns (uint) {
         return flightSuretyData.getVotesCount(candidate);
+    }
+
+    function getFlight(bytes32 key) public view returns (address, string) {
+        return (flights[key].airline, flights[key].flight);
     }
 
     
@@ -175,12 +180,13 @@ contract FlightSuretyApp {
     * @dev Register a future flight for insuring.
     *
     */  
-    function registerFlight(address _airline, uint256 _timestamp, uint8 _statusCode, string _flight) external {
+    function registerFlight(address _airline, uint256 _timestamp, uint8 _statusCode, string _flight) external returns (bytes32) {
         bytes32 key = getFlightKey(_airline, _flight, _timestamp);
         flights[key].flight = _flight;
         flights[key].airline = _airline;
         flights[key].statusCode = _statusCode;
         flights[key].updatedTimestamp = _timestamp;
+        return key;
     }
     
    /**
@@ -299,7 +305,7 @@ contract FlightSuretyApp {
     }
 
 
-    function getFlightKey(address airline, string flight, uint256 timestamp) pure internal returns(bytes32) {
+    function getFlightKey(address airline, string flight, uint256 timestamp) pure public returns(bytes32) {
         return keccak256(abi.encodePacked(airline, flight, timestamp));
     }
 
@@ -350,4 +356,5 @@ contract FlightSuretyData {
     function getVotesCount(address airlineAddress) external view returns(uint);
     function hasNotVoted(address candidate, address voter) external view returns (bool);
     function registerVote(address candidate, address voter) external;
+
 }

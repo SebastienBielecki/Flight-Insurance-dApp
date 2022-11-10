@@ -34,10 +34,7 @@ contract FlightSuretyData {
     // This map will keep track of number of approvers to register a new airline
     mapping(address => Votes) public votesToRegister;
 
-    struct Flights {
-        uint key;
-        
-    }
+    
 
     /********************************************************************************************/
     /*                                       EVENT DEFINITIONS                                  */
@@ -155,6 +152,7 @@ contract FlightSuretyData {
         votesToRegister[candidate].voteMap[voter] = true;
         votesToRegister[candidate].approvalCount =  votesToRegister[candidate].approvalCount.add(1);
     }
+
 
     /********************************************************************************************/
     /*                                     SMART CONTRACT FUNCTIONS                             */
