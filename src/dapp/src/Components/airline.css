@@ -1,0 +1,29 @@
+.airline-info {
+    text-align: left;
+}
+
+p {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+.wait-registered {
+    margin: auto;
+    color: yellow;
+}
+
+.fund {
+    margin: auto;
+    text-align: center;
+}
+
+.fund p {
+    margin-bottom: 10px;
+}
+
+.register {
+    
+    
+    width: 70%;
+    text-align: center;
+}

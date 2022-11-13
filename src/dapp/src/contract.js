@@ -47,12 +47,12 @@ class Contract {
         //     while(this.passengers.length < 5) {
         //         this.passengers.push(accts[counter++]);
         //     }
-        //     const authorizeApp = async () => {
-        //         console.log("auth begins");
-        //         await contract.flightSuretyData.methods.authorizeAppContract(Config[network].appAddress).send({from: accts[0]});
-        //         console.log("auth ended");
-        //     }
-            //authorizeApp()
+        // const authorizeApp = async () => {
+        //     console.log("auth begins");
+        //     await contract.flightSuretyData.methods.authorizeAppContract(Config[network].appAddress).send({from: accts[0]});
+        //     console.log("auth ended");
+        // }
+        //     authorizeApp()
             //this.web3 = new Web3(window.ethereum)
             // callback();
         // });

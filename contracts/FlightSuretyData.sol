@@ -116,8 +116,8 @@ contract FlightSuretyData {
         operational = mode;
     }
 
-     function authorizeAppContract(address _dataContractAddress) public requireContractOwner {
-        authorizedAppContracts[_dataContractAddress] = true;
+     function toggleAppContractAuthorization(address _dataContractAddress) public requireContractOwner {
+        authorizedAppContracts[_dataContractAddress] = !authorizedAppContracts[_dataContractAddress];
     }
     // De-Authorize a Data Contract to call functions of this Data Contract
     function deAuthorizeAppContract(address _dataContractAddress) public requireContractOwner {

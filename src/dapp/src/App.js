@@ -7,6 +7,7 @@ import Web3 from 'web3';
 import Navbar from './Components/navbar';
 import ContractOwner from './Components/contract-owner';
 import Airline from './Components/airline';
+import Passenger from './Components/passengers';
 
 
 //function
@@ -60,15 +61,30 @@ const App = () => {
     return result
   }
 
-  const setOperationalStatus = async (mode) => {
-    await contract.flightSuretyApp.methods.setOperatingStatus(mode).send({from: connectedAccount[0]});
-  }
+  // const setOperationalStatus = async (mode) => {
+  //   await contract.flightSuretyApp.methods.setOperatingStatus(mode).send({from: connectedAccount[0]});
+  // }
 
-  let events = contract.flightSuretyApp.events.allEvents((error, result) => {
+  // let events = contract.flightSuretyApp.events.allEvents((error, result) => {
+  //   if (error) {
+  //     console.log(error);
+  //   } else {
+  //     if (result.event="Operational")
+  //     setOperational(result.returnValues["mode"])
+  //   } if (result.event = "RegisterAirline") {
+  //     console.log(result.returnValues["_address"]);
+  //   }
+  // });
+
+  let events = contract.flightSuretyApp.events.Operational((error, result) => {
     if (error) {
       console.log(error);
     } else {
+      console.log("Operational event received!", result);
+      if (result.event="Operational")
       setOperational(result.returnValues["mode"])
+    } if (result.event = "RegisterAirline") {
+      console.log(result.returnValues["_address"]);
     }
   });
   
@@ -110,18 +126,22 @@ const App = () => {
 
       <section className="container">
         
-        <div id="display-wrapper" className="top-20"></div>
+        {/* <div id="display-wrapper" className="top-20"></div> */}
         
         <div className="row top-20">
             <h1>{operational ? "Contract is operational" : "Contract is not operational"} </h1>
-
-            
+        </div>
+        <div className="row top-20">
             {(userType === "Owner") && <ContractOwner
               account={connectedAccount}
               contract={contract}
               operational={operational}
             ></ContractOwner>}
-            {userType === "Airline" && <Airline></Airline>}
+            {userType === "Airline" && <Airline
+              contract={contract}
+              account={connectedAccount}
+            ></Airline>}
+            {userType === "Passenger" && <Passenger></Passenger>}
 
         </div>
       </section>

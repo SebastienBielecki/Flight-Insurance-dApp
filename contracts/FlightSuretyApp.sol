@@ -43,6 +43,8 @@ contract FlightSuretyApp {
 
     event FlightRegistered(address airline, string flight, uint256 timestamp);
 
+    event Funded(address founder);
+
  
     /********************************************************************************************/
     /*                                       FUNCTION MODIFIERS                                 */
@@ -112,6 +114,8 @@ contract FlightSuretyApp {
 
     event Operational(bool mode);
 
+    event RegisteredAirline (address _address);
+
     /********************************************************************************************/
     /*                                       UTILITY FUNCTIONS                                  */
     /********************************************************************************************/
@@ -163,6 +167,7 @@ contract FlightSuretyApp {
         // require(numberOfAirlines < 4, "more than 4 airlines");
         if (numberOfAirlines < 4) {
             flightSuretyData.registerAirline(_newAirlineAddress, _airlineName);
+            emit RegisteredAirline(_newAirlineAddress);
         } else {
             
             flightSuretyData.registerVote(_newAirlineAddress, msg.sender);
@@ -172,12 +177,15 @@ contract FlightSuretyApp {
                 flightSuretyData.registerAirline(_newAirlineAddress, _airlineName);
             }
         }
+
+
         return (success, 0);
     }
 
     function fund() public payable requireIsRegistered isPayingEnough {
         dataContractAddress.transfer(msg.value);
         flightSuretyData.fund(msg.sender);
+        emit Funded(msg.sender);
     }
 
 
