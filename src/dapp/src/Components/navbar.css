@@ -1,0 +1,25 @@
+.role {
+    color: white;
+    margin-right: 20px;
+    margin-left: auto;
+    margin-top: auto;
+    margin-bottom: auto;
+    display: flexbox;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+
+.role h4{
+    margin-bottom: 0;
+    text-align: right;
+}
+
+.role p {
+    color: white;
+    margin-bottom: 0;
+    text-align: right;
+}
+
+.debug {
+    margin: auto;
+}

@@ -28,6 +28,18 @@
   color: #61dafb;
 }
 
+.metamask {
+  margin-top: 200px;
+}
+
+h2 {
+  color: white;
+}
+
+h3 {
+  color: white;
+}
+
 @keyframes App-logo-spin {
   from {
     transform: rotate(0deg);

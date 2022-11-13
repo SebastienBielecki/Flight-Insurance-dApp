@@ -10,6 +10,8 @@ contract('Flight Surety Data Contract Tests', async (accounts) => {
   var config;
   before('setup contract', async () => {
     config = await Test.Config(accounts);
+    console.log("App address: ", config.flightSuretyApp.address);
+    console.log("Data address: ", config.flightSuretyData.address);
     //await config.flightSuretyData.authorizeCaller(config.flightSuretyApp.address);
   });
 

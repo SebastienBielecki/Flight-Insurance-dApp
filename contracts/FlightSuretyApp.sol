@@ -21,7 +21,6 @@ contract FlightSuretyApp {
     uint256 private minFunding;
     bool operational = true;
     address private dataContractAddress;
-    uint256 private dummy = 0;
 
     // Flight status codees
     uint8 private constant STATUS_CODE_UNKNOWN = 0;
@@ -111,23 +110,19 @@ contract FlightSuretyApp {
         flights[0x56556e7e8717edcb60f5aa0d49de71cca39e2eca163bf1e2bca5fe33128b872d].flight = "Mexico - Paris";
     }
 
+    event Operational(bool mode);
+
     /********************************************************************************************/
     /*                                       UTILITY FUNCTIONS                                  */
     /********************************************************************************************/
 
-    function changeDummy(uint256 number) public {
-        dummy = number;
-    }
-
-     function getDummy() public view returns (uint256) {
-        return dummy;
-    }
     function isOperational() public view returns(bool) {
         return operational;  
     }
 
     function setOperatingStatus(bool mode) public requireContractOwner {
         operational = mode;
+        emit Operational(mode);
     }
 
     function testAuthContractAccess() returns (bool) {
