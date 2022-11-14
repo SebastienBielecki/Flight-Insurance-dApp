@@ -8,22 +8,43 @@ p {
 }
 
 .wait-registered {
-    margin: auto;
+    padding-top: 30px;
     color: yellow;
+    text-align: center;
 }
 
 .fund {
-    margin: auto;
+    /* padding-top: 30px; */
+    width: 80%;
+    margin-top: 30px;
+    margin-bottom: auto;
     text-align: center;
+    display:flex;
+    align-items: center;
+    
 }
+
 
 .fund p {
     margin-bottom: 10px;
+    text-align: center;
+    display: inline-block;
 }
 
 .register {
-    
-    
+    /* display: flex;
+    flex-direction: column; */
+    padding-top: 10px;
     width: 70%;
-    text-align: center;
+    
+    justify-content: center;
 }
+
+.register h2 {
+    margin-bottom: 10px;
+}
+
+.input {
+    width: 300px;
+} 
+

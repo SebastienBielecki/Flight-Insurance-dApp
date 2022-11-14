@@ -114,7 +114,7 @@ contract FlightSuretyApp {
 
     event Operational(bool mode);
 
-    event RegisteredAirline (address _address);
+    event RegisteredAirline (bool registerd, uint256 vote, uint256 totalAirlines);
 
     /********************************************************************************************/
     /*                                       UTILITY FUNCTIONS                                  */
@@ -123,6 +123,7 @@ contract FlightSuretyApp {
     function isOperational() public view returns(bool) {
         return operational;  
     }
+
 
     function setOperatingStatus(bool mode) public requireContractOwner {
         operational = mode;
@@ -162,12 +163,12 @@ contract FlightSuretyApp {
     * @dev Add an airline to the registration queue
     *
     */   
-    function registerAirline(address _newAirlineAddress, string _airlineName) external requireHaveFunded requireHasNotVoted(_newAirlineAddress, msg.sender) returns(bool success, uint256 votes) {
+    function registerAirline(address _newAirlineAddress, string _airlineName) external requireHaveFunded requireHasNotVoted(_newAirlineAddress, msg.sender) returns(bool success, uint256 votes, uint256 requiredVotes) {
         uint numberOfAirlines = getNumberOfFundingAirlines();
         // require(numberOfAirlines < 4, "more than 4 airlines");
         if (numberOfAirlines < 4) {
             flightSuretyData.registerAirline(_newAirlineAddress, _airlineName);
-            emit RegisteredAirline(_newAirlineAddress);
+            emit RegisteredAirline(true, 1, numberOfAirlines);
         } else {
             
             flightSuretyData.registerVote(_newAirlineAddress, msg.sender);
@@ -175,11 +176,11 @@ contract FlightSuretyApp {
             //require(true == false, vote);
             if (vote.mul(2) >= numberOfAirlines) {
                 flightSuretyData.registerAirline(_newAirlineAddress, _airlineName);
+                emit RegisteredAirline(true, vote, numberOfAirlines);
+            } else {
+                emit RegisteredAirline(false, vote, numberOfAirlines);
             }
         }
-
-
-        return (success, 0);
     }
 
     function fund() public payable requireIsRegistered isPayingEnough {

@@ -2,11 +2,45 @@
 
     font-weight: bold;
     display: block;
-    margin-left: auto;
-    margin-right: auto;
+    /* margin-left: auto;
+    margin-right: auto; */
     margin-bottom: 20px;
 }
 
 .admin-container {
     margin: auto;
+}
+
+h2 {
+    text-align: left;
+    margin-bottom: 0;
+}
+
+p {
+    text-align: left;
+    align-self: center;
+    width: 60%;
+    /* height: 40px; */
+    margin-top: auto;
+    margin-bottom: auto;
+    margin-right: auto;
+    display: inline-block;
+    font-size: medium;
+}
+
+.vertical-center {
+    margin: 0;
+    position: absolute;
+    top: 50%;
+    -ms-transform: translateY(-50%);
+    transform: translateY(-50%);
+  }
+
+.row {
+    margin-bottom: 10px;
+    margin-left: 0;
+}
+
+.address {
+    font-size: smaller;
 }
