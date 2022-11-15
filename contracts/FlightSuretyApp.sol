@@ -19,6 +19,7 @@ contract FlightSuretyApp {
     // Declare varialble of Data Contract type
     FlightSuretyData flightSuretyData;
     uint256 private minFunding;
+    uint private flightNumber = 1;
     bool operational = true;
     address private dataContractAddress;
 
@@ -34,6 +35,7 @@ contract FlightSuretyApp {
 
     struct Flight {
         //bool isRegistered;
+        uint number;
         string flight;
         uint8 statusCode;
         uint256 updatedTimestamp;        
@@ -41,7 +43,7 @@ contract FlightSuretyApp {
     }
     mapping(bytes32 => Flight) public flights;
 
-    event FlightRegistered(address airline, string flight, uint256 timestamp);
+    event FlightRegistered(uint256 number,address airline, string flight, uint256 timestamp);
 
     event Funded(address founder);
 
@@ -147,8 +149,13 @@ contract FlightSuretyApp {
         return flightSuretyData.getVotesCount(candidate);
     }
 
-    function getFlight(bytes32 key) public view returns (address, string) {
+    function getFlight(address _airline, string _flight, uint256 _timestamp ) public view returns (address, string) {
+        bytes32 key = getFlightKey(_airline, _flight, _timestamp);
         return (flights[key].airline, flights[key].flight);
+    }
+
+    function getFlightnumber() public view returns (uint256) {
+        return flightNumber;
     }
 
     
@@ -196,8 +203,9 @@ contract FlightSuretyApp {
     */  
     function registerFlight(address _airline, uint256 _timestamp, uint8 _statusCode, string _flight) requireHaveFunded {
         bytes32 key = getFlightKey(_airline, _flight, _timestamp);
-        flights[key] = Flight(_flight, _statusCode, _timestamp, _airline);
-        emit FlightRegistered(_airline, _flight, _timestamp);
+        flights[key] = Flight(flightNumber, _flight, _statusCode, _timestamp, _airline);
+        emit FlightRegistered(flightNumber, _airline, _flight, _timestamp);
+        flightNumber = flightNumber.add(1);
     }
     
    /**

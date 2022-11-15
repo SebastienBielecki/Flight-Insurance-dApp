@@ -20,6 +20,7 @@ const App = () => {
   const [connectedAccount, setConnectedAccount] = useState("")
   const [loadingMeta, setLoadingMeta] = useState(false)
   const [message, setMessage] = useState({header: "", content: "", display:false})
+  const [flights, setFlights] = useState([])
 
 
   
@@ -118,6 +119,7 @@ const App = () => {
         <div className='metamask'>
         <Button 
           loading={loadingMeta}
+          className="metamask-btn"
           primary
           onClick={() => connectMetamask()}
           size="massive"
@@ -136,8 +138,12 @@ const App = () => {
               setMessage={setMessage}
               contract={contract}
               account={connectedAccount}
+              flights={flights}
+              setFlights={setFlights}
             ></Airline>}
-            {userType === "Passenger" && <Passenger></Passenger>}
+            {userType === "Passenger" && <Passenger
+              flights={flights}
+            ></Passenger>}
 
             {message.display && <Message
                 header={message.header}

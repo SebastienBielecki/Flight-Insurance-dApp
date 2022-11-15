@@ -30,6 +30,9 @@
 
 .metamask {
   margin-top: 200px;
+  display: flex;
+  align-items: center;
+  position: relative;
 }
 
 h1 {
@@ -54,4 +57,11 @@ h3 {
   to {
     transform: rotate(360deg);
   }
+}
+
+.metamask-btn {
+  margin-bottom: 100px;
+  position: absolute;
+  left: 38%;
+  top: -120px;
 }

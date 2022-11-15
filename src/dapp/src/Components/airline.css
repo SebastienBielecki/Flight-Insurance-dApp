@@ -48,3 +48,18 @@ p {
     width: 300px;
 } 
 
+label {
+    text-align: left;
+}
+.my-label label{
+    color: white;
+}
+
+.ui.form .field>label .my-label {
+    color: white;
+}
+
+h2 {
+    margin-bottom: 10px;
+}
+

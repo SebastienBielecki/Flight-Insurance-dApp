@@ -1,10 +1,17 @@
 import "./passengers.css"
+import FlightTable from "./flightCard"
+import { Divider, Button, Input } from "semantic-ui-react"
 
-const Passenger = () => {
+
+const Passenger = (props) => {
     return (<>
-        <label className="form">Flight</label> 
-        <input type="text" id="flight-number"></input>
-        <button className="btn btn-primary" id="submit-oracle">Submit to Oracles</button>
+        <FlightTable
+            flights={props.flights}
+        ></FlightTable>
+        <Divider></Divider>
+        <h3 className="form label-form">Flight #</h3> 
+        <Input type="text" id="flight-number"></Input>
+        <Button primary id="submit-oracle">Submit to Oracles</Button>
     </>)
 }
 
