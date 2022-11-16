@@ -25,6 +25,14 @@ contract FlightSuretyData {
         uint256 approvalCount;
         mapping(address => bool) voteMap;
     }
+
+    struct Passenger {
+        address wallet;
+        // balance that the smart contract owns to the passenger
+        uint256 balance;
+        // maps amount of insurance paid for a flight
+        mapping(bytes32 => uint256) paidInsurance;
+    }
     uint256 private registeredAirlinesTotal;
     uint256 private haveFundedAirlinesTotal;
 
@@ -55,6 +63,7 @@ contract FlightSuretyData {
     
     }
 
+    event Authorized(address appAddress, bool auth);
     /********************************************************************************************/
     /*                                       FUNCTION MODIFIERS                                 */
     /********************************************************************************************/
@@ -118,11 +127,12 @@ contract FlightSuretyData {
 
      function toggleAppContractAuthorization(address _dataContractAddress) public requireContractOwner {
         authorizedAppContracts[_dataContractAddress] = !authorizedAppContracts[_dataContractAddress];
+        emit Authorized(_dataContractAddress, authorizedAppContracts[_dataContractAddress]);
     }
     // De-Authorize a Data Contract to call functions of this Data Contract
-    function deAuthorizeAppContract(address _dataContractAddress) public requireContractOwner {
-        authorizedAppContracts[_dataContractAddress] = false;
-    }
+    // function deAuthorizeAppContract(address _dataContractAddress) public requireContractOwner {
+    //     authorizedAppContracts[_dataContractAddress] = false;
+    // }
 
     function testAuthContractAccess() external requireAuthorizedAppContract returns (bool){
         return true;

@@ -4,31 +4,32 @@ import { Grid, Button, GridColumn, Divider, Menu, GridRow } from "semantic-ui-re
 
 const ContractOwner = (props) => {
 
-    const [authorized, setAuthorized] = useState(false)
+    console.log("Render Contract Owner");
+
     const [loadingAuth, setLoadingAuth] = useState(false)
     const [loadingPause, setLoadingPause] = useState(false)
+    const [balance, setBalance] = useState()
 
-    const setOperationalStatus = async (mode) => {
-        setLoadingPause(true)
-        await props.contract.flightSuretyApp.methods.setOperatingStatus(mode).send({from: props.account});
-        setLoadingPause(false)
+    const toggleOperationalStatus = async () => {
+        props.setLoaders({...props.loaders, operational: true})
+        await props.contract.flightSuretyApp.methods.toggleOperationalStatus().send({from: props.account});
     }
     
-    const isAppContractAuthorized = async () => {
-        let result = await props.contract.flightSuretyData.methods.isAppContractAuthorized(props.contract.flightSuretyApp._address).call({from: props.account})
-        setAuthorized(result)
-    }
-
     const toggleAuthorization = async (mode) => {
         setLoadingAuth(true)
         await props.contract.flightSuretyData.methods.toggleAppContractAuthorization(props.contract.flightSuretyApp._address).send({from: props.account})
-        await isAppContractAuthorized()
         setLoadingAuth(false)
     }
 
-    const init = async () => {
-        await isAppContractAuthorized()
+    const getContractBalance = async () => {
+        let balance = await props.contract.web3.eth.getBalance(props.contract.flightSuretyData._address)
+        balance = props.contract.web3.utils.fromWei(balance, "ether")
+        setBalance(balance)
     }
+
+    const init = async () => {
+        await getContractBalance()
+    }  
 
     init()
     // useEffect(() => isAppContractAuthorized, [authorized, props.account])
@@ -46,29 +47,34 @@ const ContractOwner = (props) => {
                     <div className="row">
                         <p>{props.operational ? "Contract is Operational" : "Contract is not operational"}</p>
                         <Button 
-                            onClick={() => setOperationalStatus(!props.operational)} 
+                            onClick={() => toggleOperationalStatus()} 
                             primary
-                            loading={loadingPause}
+                            loading={props.loaders.operational}
                             floated="right"
                             >
-                            {props.operational ? "Pause Contract" : "Active contract"}
+                            {props.operational ? "Pause Contract" : "Activate contract"}
                         </Button>
                     </div>
                     <div className="row">
-                        <p>{!authorized ? "APP CONTRACT NOT AUTHORIZED BY DATA CONTRACT" : "App contract authorized by data contract"}</p>
+                        <p>{!props.appContractAuthorized ? "APP CONTRACT NOT AUTHORIZED BY DATA CONTRACT" : "App contract authorized by data contract"}</p>
                         <Button 
                             onClick={() => toggleAuthorization()} 
                             primary
-                            loading={loadingAuth}
+                            loading={props.loaders.authorized}
                             floated="right"
                             >
-                            {!authorized ? "Authorize" : "Deauthorize"}
+                            {!props.appContractAuthorized ? "Authorize" : "Deauthorize"}
                         </Button>
                     </div>
                 </Grid.Column>
                 <Divider vertical></Divider>
                 <GridColumn width={8}>
                     <h2>Data Contract:</h2>
+                    <p className="address">{props.contract.flightSuretyData._address}</p>
+                    <Divider></Divider>
+                    <div className="row">
+                        <p>Funds in Contract: {(Math.round(balance * 100) / 100).toFixed(2)} Ethers</p>
+                    </div>
                 </GridColumn>
             </Grid>
         </div>

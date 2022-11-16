@@ -2,7 +2,7 @@ import logo from './logo.svg';
 import './App.css';
 import "./flightsurety.css";
 import contract from './contract';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Web3 from 'web3';
 import Navbar from './Components/navbar';
 import ContractOwner from './Components/contract-owner';
@@ -15,14 +15,16 @@ import Layout from './Components/layout';
 //function
 const App = () => {
 
-  const [isMetamaskConnected, setIsMetamaskConnected] = useState(false);
+  console.log("Render from App.js");
+
+  const [isMetamaskConnected, setIsMetamaskConnected] = useState(false)
+  const [appContractAuthorized, setAppContractAuthorized] = useState(false)
   const [operational, setOperational] = useState(false);
   const [connectedAccount, setConnectedAccount] = useState("")
   const [loadingMeta, setLoadingMeta] = useState(false)
+  const [loaders, setLoaders] = useState({})
   const [message, setMessage] = useState({header: "", content: "", display:false})
   const [flights, setFlights] = useState([])
-
-
   
 
   const typeAccount = (account) => {
@@ -62,31 +64,153 @@ const App = () => {
     })
   }
 
-  
+  const isAppContractAuthorized = async () => {
+    let result = await contract.flightSuretyData.methods.isAppContractAuthorized(contract.flightSuretyApp._address).call({from: connectedAccount})
+    return result
+}
 
   const isOperational = async () => {
     let result = await contract.flightSuretyApp.methods.isOperational().call({from: contract.airlines[0]})
     return result
   }
 
-  let events = contract.flightSuretyApp.events.Operational((error, result) => {
-    if (error) {
-      console.log(error);
-    } else {
-      console.log("Operational event received!", result);
-      if (result.event="Operational")
-      setOperational(result.returnValues["mode"])
-    } if (result.event = "RegisterAirline") {
-      console.log(result.returnValues["_address"]);
-    }
-  });
-  
-  const init = async () => {  
-    let result = await isOperational()
-    setOperational(result);
-  }
 
-  init()
+  useEffect(() => {
+    const fetchInitialState = async () => {
+      let flightsTemp = []
+      let result = await contract.flightSuretyApp.methods.getFlightsArray().call({from: connectedAccount})
+      let op = await isOperational()
+      let auth = await isAppContractAuthorized()
+      for (let element of result ) {
+        let temp = await contract.flightSuretyApp.methods.getFlight(element).call({from: connectedAccount})
+        let flight = {
+          key: temp[0],
+          number: temp[1],
+          airline: temp[2],
+          itinerary: temp[3],
+          time: temp[4]
+        }
+        flightsTemp.push(flight)
+      }
+      setFlights(flightsTemp)
+
+
+      
+      setOperational(op)
+      setAppContractAuthorized(auth)
+      console.log("fetch initial state complete", auth);
+    }
+
+    fetchInitialState()
+    // set listeners
+    let dataListener = contract.flightSuretyData.events.Authorized((error, result) => {
+      console.log("authorized event from DATA SC");
+      if (error) {
+        console.log(error);
+      } else {
+        setMessage({
+          display: true,
+          header: "Data contract authorized App contract was changed",
+          content: `App contract ${result.returnValues.appAddress} authorization is set to ${result.returnValues.auth}`
+        })
+        
+        setAppContractAuthorized(result.returnValues.auth)
+      }
+    })
+  
+    let appListener = contract.flightSuretyApp.events.allEvents((error, result) => {
+      console.log("Allevents event from app.js");
+      if (error) {
+        console.log(error);
+        setMessage({
+          display: true,
+          header: "Error",
+          content: error
+        })
+        setLoaders({...loaders, operational: false})
+      } else {
+        switch(result.event) {
+          case "Operational": 
+            console.log("Operational event received", result.event);
+            setMessage({
+              display: true,
+              header: `Operational mode set to ${result.returnValues.mode}`
+            })
+            setOperational(result.returnValues.mode)
+            setLoaders({})
+            break
+          case "RegisteredAirline":
+              console.log("RegisteredAirline event", result.event)
+              if (result.returnValues[0]) {
+                setMessage({
+                    display: true,
+                    header: "Succesfully registered",
+                    content: `${result.returnValues[1]} votes out of ${result.returnValues[2]}`
+                })
+              } else {
+                setMessage({
+                    display: true,
+                    header: "Thank you for your vote",
+                    content: `${result.returnValues[1]} vote(s) out of ${result.returnValues[2]}`
+                })
+              }
+              setLoaders({})
+              break
+          case "Funded":
+            console.log("Funded event")
+            setMessage({
+              display: true,
+              header: "Funds successfully transfered",
+              content: "You can now register flights and vote for new airlines to participate"
+            })
+            setLoaders({})
+            break
+          case "AirlineRegistered":
+            console.log("AirlineRegistered event");
+            if (result.returnValues[0]) {
+              setMessage({
+                  display: true,
+                  header: "Succesfully registered",
+                  content: `${result.returnValues[1]} votes out of ${result.returnValues[2]}`
+              })
+            } else {
+              setMessage({
+                  display: true,
+                  header: "Thank you for your vote",
+                  content: `${result.returnValues[1]} vote(s) out of ${result.returnValues[2]}`
+              })
+            }
+            setLoaders({})
+            break
+          case "FlightRegistered":
+            console.log("FlightRegistered event")
+            let {key, number, airline, itinerary, time} = result.returnValues
+            setMessage({
+                header: "Flight succesfully registered",
+                content: `Flight key: ${key} ${number} ${airline} ${itinerary} ${time}`,
+                display: true
+            })
+            setFlights(prev => [...prev, {key, number, airline, itinerary, time}])
+            setLoaders({})
+            break
+          default:
+            console.log("An event was received, but was not handled: ", result);
+            setMessage({
+              display: true,
+              header: "Unknow event received",
+              content: {result}
+            })
+        }
+      }
+    });
+    // clean up function
+    return () => {
+      appListener = null;
+      dataListener = null;
+    }
+  }, [])
+    
+  
 
   window.ethereum.on('accountsChanged', async () => {
     //console.log("Metamask account has changed");
@@ -132,9 +256,14 @@ const App = () => {
               account={connectedAccount}
               contract={contract}
               operational={operational}
+              appContractAuthorized={appContractAuthorized}
+              setLoaders={setLoaders}
+              loaders={loaders}
             ></ContractOwner>}
 
             {userType === "Airline" && <Airline
+              setLoaders={setLoaders}
+              loaders={loaders}
               setMessage={setMessage}
               contract={contract}
               account={connectedAccount}

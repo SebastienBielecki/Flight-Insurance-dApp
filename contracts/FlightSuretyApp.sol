@@ -42,8 +42,11 @@ contract FlightSuretyApp {
         address airline;
     }
     mapping(bytes32 => Flight) public flights;
+    // this array stores flights key, in order to be able ti persist flights key for the frontend
+    // because it is not possible to iterate through a mapping
+    bytes32[] flightsArray;
 
-    event FlightRegistered(uint256 number,address airline, string flight, uint256 timestamp);
+    event FlightRegistered(bytes32 key, uint number, address airline, string itinerary, uint256 time);
 
     event Funded(address founder);
 
@@ -127,9 +130,9 @@ contract FlightSuretyApp {
     }
 
 
-    function setOperatingStatus(bool mode) public requireContractOwner {
-        operational = mode;
-        emit Operational(mode);
+    function toggleOperationalStatus() public requireContractOwner {
+        operational = !operational;
+        emit Operational(operational);
     }
 
     function testAuthContractAccess() returns (bool) {
@@ -149,9 +152,12 @@ contract FlightSuretyApp {
         return flightSuretyData.getVotesCount(candidate);
     }
 
-    function getFlight(address _airline, string _flight, uint256 _timestamp ) public view returns (address, string) {
-        bytes32 key = getFlightKey(_airline, _flight, _timestamp);
-        return (flights[key].airline, flights[key].flight);
+    function getFlight(bytes32 key) public view returns (bytes32, uint, address, string, uint256) {
+        return (key, flights[key].number, flights[key].airline, flights[key].flight, flights[key].updatedTimestamp);
+    }
+
+    function getFlightsArray() public view returns(bytes32[]) {
+        return flightsArray;
     }
 
     function getFlightnumber() public view returns (uint256) {
@@ -204,7 +210,8 @@ contract FlightSuretyApp {
     function registerFlight(address _airline, uint256 _timestamp, uint8 _statusCode, string _flight) requireHaveFunded {
         bytes32 key = getFlightKey(_airline, _flight, _timestamp);
         flights[key] = Flight(flightNumber, _flight, _statusCode, _timestamp, _airline);
-        emit FlightRegistered(flightNumber, _airline, _flight, _timestamp);
+        flightsArray.push(key);
+        emit FlightRegistered(key, flightNumber, _airline, _flight, _timestamp);
         flightNumber = flightNumber.add(1);
     }
     
