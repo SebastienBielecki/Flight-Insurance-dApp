@@ -3,19 +3,15 @@ import { Container } from "semantic-ui-react";
 import Navbar from './navbar';
 import "./layout.css"
 
-const Layout = (props) => {
+const Layout = ({children}) => {
     return (
         <Container>
-            <Navbar
-                account={props.account}
-                contract={props.contract}
-            ></Navbar>
+            <Navbar/>
             <div className="black-background">
                 <div>
-                    {props.children}
+                    {children}
                 </div>
             </div>
-            
         </Container>
     );
 };

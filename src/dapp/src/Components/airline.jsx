@@ -2,26 +2,23 @@ import { useEffect, useState } from 'react';
 import contract from '../contract';
 import "./airline.css"
 import { Grid, GridColumn, Button, Input, Form, Divider } from 'semantic-ui-react';
-import FlightTable from './flightCard';
+import FlightTable from './flightTable';
+import { useGlobalContext } from '../context';
+import { generateStatusCode } from '../helpers';
 
 const Airline = (props) => {
     console.log("Render Airlines");
     const [airlineInfo, setAirlineinfo] = useState({name: "", registered: false, funded: false})
     const [address, setAddress] = useState("")
-    
-    
-    const generateStatusCode = () => {
-        // for simulation purpose flight will be delayed by company's fault 50% of times
-        let result = Math.random()
-        if (result < 0.5) return 20
-        else if (result > 0.9) return 0
-        else if (result > 0.8) return 10
-        else if (result > 0.7) return 30
-        else if (result > 0.6) return 40
-        else return 50
-    }
-
     const [flight, setFlight] = useState({airline: "", itinerary: "", time: "", code: generateStatusCode()})
+
+    const { 
+        loaders, 
+        setLoaders, 
+        handleError, 
+        currentUser 
+    } = useGlobalContext()
+    
     const handleChange = (e) => {
         setAddress(prev => e.target.value)
     }
@@ -32,53 +29,62 @@ const Airline = (props) => {
             return {
             ...prev, 
             [name]: value,
-            airline: props.account
+            airline: currentUser.account
         }
         })
     }
 
     const handleSubmitFlight = async () => {
-        //let code = generateStatusCode()
-        props.setLoaders({regFlight: true})
-        let number = await contract.flightSuretyApp.methods.getFlightnumber().call({from: props.account})
-        setFlight(prev => {
-            return {
-                ...prev,
-                number
-            }
-        })
-        await contract.flightSuretyApp.methods.registerFlight(flight.airline, flight.time, flight.code, flight.itinerary).send({from: props.account})
-        //console.log(flight);
-        //props.setFlights(prev => [...prev, flight])
+        setLoaders({...loaders, regFlight: true})
+        try {
+            //generate a flight number
+            let number = await contract.flightSuretyApp.methods.getFlightnumber().call({from: currentUser.account})
+            setFlight(prev => {
+                return {...prev, number}
+            })
+            await contract.flightSuretyApp.methods.registerFlight(flight.airline, flight.time, flight.code, flight.itinerary).send({from: currentUser.account})
+        } catch (error) {
+            handleError(error)
+        }
+        // prepare status code for next flight
         setFlight({code: generateStatusCode(), itinerary: "", time: ""})
     }
 
     const submitAirline = async (add) => {
-        props.setLoaders({regAirline: true})
-        let result = await contract.flightSuretyApp.methods.registerAirline(add, "Airline").send({from: props.account})
-        console.log(result);
+        setLoaders({...loaders, regAirline: true})
+        try {
+            await contract.flightSuretyApp.methods.registerAirline(add, "Airline").send({from: currentUser.account})
+        } catch (error) {
+            handleError(error)
+        }
         setAddress("")
     }
 
     const fund = async() => {
-        props.setLoaders({...props.loaders, fund: true})
-        await props.contract.flightSuretyApp.methods.fund().send({from: props.account, value: props.contract.web3.utils.toWei('1', 'ether')})
-        getAirlineInfo()
+        setLoaders({...loaders, fund: true})
+        try {
+            await contract.flightSuretyApp.methods.fund().send({from: currentUser.account, value: contract.web3.utils.toWei('1', 'ether')})
+            getAirlineInfo()
+        } catch (error) {
+            handleError(error)
+        }
+        
     }
 
     const getAirlineInfo = async () => {
-        let result = await props.contract.flightSuretyApp.methods.getAirlineInfo(props.account).call()
-        //console.log(result);
-        setAirlineinfo({
-            name: result[1],
-            registered: result[2],
-            funded: result[3]
-        })
+        try {
+            let result = await contract.flightSuretyApp.methods.getAirlineInfo(currentUser.account).call()
+            setAirlineinfo({
+                name: result[1],
+                registered: result[2],
+                funded: result[3]
+            })
+        } catch (error) {
+            handleError(error)
+        }
     }
 
-
-    useEffect(() => {getAirlineInfo()}, [props.account])
-
+    useEffect(() => {getAirlineInfo()}, [currentUser.account])
 
     return (<>
         <Grid>
@@ -94,12 +100,12 @@ const Airline = (props) => {
                     {!airlineInfo.registered && <h2 className="wait-registered">Wait for being registered</h2>}
                     {(airlineInfo.registered && !airlineInfo.funded) && <div className="fund">
                         <p>Fund to participate to the insurance program</p>
-                        <Button loading={props.loaders.fund} onClick={() => fund()} primary>Fund 1 Ethers</Button>
+                        <Button loading={loaders.fund} onClick={() => fund()} primary>Fund 1 Ethers</Button>
                     </div>}
                     {(airlineInfo.registered && airlineInfo.funded) && <div className='register'>
                         <h2>Register or Vote for new Airline</h2>
                         <Input focus onChange={handleChange} placeholder="new airline address" value={address}></Input>
-                        <Button loading={props.loaders.regAirline} onClick={() => submitAirline(address)} primary floated="right">Register / Vote</Button>
+                        <Button loading={loaders.regAirline} onClick={() => submitAirline(address)} primary floated="right">Register / Vote</Button>
                     </div>}
                 </GridColumn>
             </Grid.Row>
@@ -116,15 +122,12 @@ const Airline = (props) => {
                             <label>Arrival Time</label>
                             <input  onChange={handleFlightChange} placeholder="HH:MM" name="time" value={flight.time}/>
                         </Form.Field>
-                        <Form.Button loading={props.loaders.regFlight} floated="right" type="submit">Submit</Form.Button>
+                        <Form.Button loading={loaders.regFlight} floated="right" type="submit">Submit</Form.Button>
                     </Form>
                 </Grid.Column>
                 <Grid.Column width = {11}>
                     <h2>Flights</h2>
-                    <FlightTable
-                        props={props.contract}
-                        flights={props.flights}
-                    ></FlightTable>
+                    <FlightTable/>
                     <Button onClick={props.getFlightsArray} primary>Get Flight Array</Button>
                 </Grid.Column>
             </Grid.Row>}

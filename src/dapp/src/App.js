@@ -1,49 +1,36 @@
-import logo from './logo.svg';
 import './App.css';
 import "./flightsurety.css";
 import contract from './contract';
 import { useEffect, useState } from 'react';
-import Web3 from 'web3';
-import Navbar from './Components/navbar';
 import ContractOwner from './Components/contract-owner';
 import Airline from './Components/airline';
 import Passenger from './Components/passengers';
 import { Button, Message } from 'semantic-ui-react';
 import Layout from './Components/layout';
+import { useGlobalContext } from './context';
+import { typeAccount } from './helpers';
 
 
 //function
 const App = () => {
 
+  const { 
+    loaders,
+    setLoaders, 
+    message, 
+    setMessage, 
+    currentUser, 
+    setCurrentUser,
+    setOperational,
+    setAppContractAuthorized,
+    flights,
+    setFlights,
+  } = useGlobalContext()
+
   console.log("Render from App.js");
 
   const [isMetamaskConnected, setIsMetamaskConnected] = useState(false)
-  const [appContractAuthorized, setAppContractAuthorized] = useState(false)
-  const [operational, setOperational] = useState(false);
-  const [connectedAccount, setConnectedAccount] = useState("")
   const [loadingMeta, setLoadingMeta] = useState(false)
-  const [loaders, setLoaders] = useState({})
-  const [message, setMessage] = useState({header: "", content: "", display:false})
-  const [flights, setFlights] = useState([])
-  
-
-  const typeAccount = (account) => {
-    if (account === contract.owner) {
-       return "Owner"
-    } 
-    for (let i = 0; i < 5; i++) {
-        if (account === contract.airlines[i]) {
-            return "Airline"
-        }
-        if (account === contract.passengers[i]) {
-            return `Passenger`
-        }
-    }
-    return account
-  }
-
-  let userType = typeAccount(connectedAccount)
-  
   
   const connectMetamask = async () => {
       //contract.web3 = new Web3(window.ethereum)
@@ -56,8 +43,7 @@ const App = () => {
       }
       //console.log('getMetaskID:',res)
       contract.metamaskAccountID = res[0];
-      setConnectedAccount(res[0])
-        
+      setCurrentUser({account: res[0], profile: typeAccount(res[0])})
       //console.log("contract after Metamask: ", contract);
       setIsMetamaskConnected(true)
       setLoadingMeta(false)
@@ -65,7 +51,7 @@ const App = () => {
   }
 
   const isAppContractAuthorized = async () => {
-    let result = await contract.flightSuretyData.methods.isAppContractAuthorized(contract.flightSuretyApp._address).call({from: connectedAccount})
+    let result = await contract.flightSuretyData.methods.isAppContractAuthorized(contract.flightSuretyApp._address).call({from: currentUser.account})
     return result
 }
 
@@ -75,10 +61,10 @@ const App = () => {
   }
 
   const fetchFlights = async () => {
-    let result = await contract.flightSuretyApp.methods.getFlightsArray().call({from: connectedAccount})
+    let result = await contract.flightSuretyApp.methods.getFlightsArray().call({from: currentUser.account})
     let flightsTemp = []
     for (let element of result ) {
-      let temp = await contract.flightSuretyApp.methods.getFlight(element).call({from: connectedAccount})
+      let temp = await contract.flightSuretyApp.methods.getFlight(element).call({from: currentUser.account})
       let flight = {
         key: temp[0],
         number: temp[1],
@@ -94,23 +80,9 @@ const App = () => {
 
   useEffect(() => {
     const fetchInitialState = async () => {
-      //let flightsTemp = []
       let op = await isOperational()
       let auth = await isAppContractAuthorized()
       await fetchFlights()
-      // let result = await contract.flightSuretyApp.methods.getFlightsArray().call({from: connectedAccount})
-      // for (let element of result ) {
-      //   let temp = await contract.flightSuretyApp.methods.getFlight(element).call({from: connectedAccount})
-      //   let flight = {
-      //     key: temp[0],
-      //     number: temp[1],
-      //     airline: temp[2],
-      //     itinerary: temp[3],
-      //     time: temp[4]
-      //   }
-      //   flightsTemp.push(flight)
-      // }
-      // setFlights(flightsTemp)
       setOperational(op)
       setAppContractAuthorized(auth)
       console.log("fetch initial state complete", auth);
@@ -217,6 +189,7 @@ const App = () => {
               content: `flightKey ${flightKey} bought from ${buyer} for ${amount} Ethers`,
               display: true
             })
+            setLoaders({})
             break
           default:
             console.log("An event was received, but was not handled: ", result);
@@ -225,6 +198,7 @@ const App = () => {
               header: "Unknow event received",
               content: {result}
             })
+            setLoaders({})
         }
       }
     });
@@ -247,8 +221,9 @@ const App = () => {
       }
       //console.log('getMetaskID:',res);
       //let matchedAccount = matchAccount(res[0])
-      setConnectedAccount(res[0])
+      setCurrentUser({account: res[0], profile: typeAccount(res[0])})
       setMessage({...message, display: false})
+      
       // if (res.length > 1) {
       //   alert("Please have only one account connected!")
       //   contract.metamaskAccountID = null
@@ -260,11 +235,8 @@ const App = () => {
 
   return (
     <div className="App">
-      <Layout
-        contract={contract}
-        account={connectedAccount}
-        >
-      {!connectedAccount &&
+      <Layout>
+      {!currentUser.account &&
         <div className='metamask'>
         <Button 
           loading={loadingMeta}
@@ -276,40 +248,15 @@ const App = () => {
           Connect Metamask
         </Button>
         </div>}
-      
-            {(userType === "Owner") && <ContractOwner
-              account={connectedAccount}
-              contract={contract}
-              operational={operational}
-              appContractAuthorized={appContractAuthorized}
-              setLoaders={setLoaders}
-              loaders={loaders}
-            ></ContractOwner>}
-
-            {userType === "Airline" && <Airline
-              setLoaders={setLoaders}
-              loaders={loaders}
-              setMessage={setMessage}
-              contract={contract}
-              account={connectedAccount}
-              flights={flights}
-              setFlights={setFlights}
-            ></Airline>}
-            {userType === "Passenger" && <Passenger
-              userType={userType}
-              flights={flights}
-              account={connectedAccount}
-              contract={contract}
-            ></Passenger>}
-
+            {(currentUser.profile === "Owner") && <ContractOwner/>}
+            {currentUser.profile === "Airline" && <Airline/>}
+            {currentUser.profile === "Passenger" && <Passenger/>}
             {message.display && <Message
                 header={message.header}
                 content={message.content}
             >
             </Message>}
       </Layout>
-
-     
     </div>
   );
 }

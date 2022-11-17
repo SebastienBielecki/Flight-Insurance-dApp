@@ -1,8 +1,12 @@
 import { Button, Table, Input } from 'semantic-ui-react'
 import { useEffect, useState } from 'react';
 import React from "react";
+import "./flightTable.css"
+import { useGlobalContext } from '../context';
+import contract from '../contract';
 
-const FlightTable = (props) => {
+const FlightTable = () => {
+    const { loaders, setLoaders, message, setMessage, handleError, currentUser, flights } = useGlobalContext()
     const [amount, setAmount] = useState({})
     const [insurance, setInsurance] = useState([])
     console.log("render FlightTable");
@@ -11,43 +15,53 @@ const FlightTable = (props) => {
     useEffect(() => {
         const fetchPaidInsurance = async () => {
             let input = []
-            props.flights.forEach(element => {
+            flights.forEach(element => {
                 input.push(element.key)
             });
             console.log("input of fectInsurances", input);
-            let result = await props.contract.flightSuretyData.methods.getPaidInsurance(props.account, input).call({from: props.account})
+            let result = await contract.flightSuretyData.methods.getPaidInsurance(currentUser.account, input).call({from: currentUser.account})
             console.log("result of fetch insurances", result);
             let resultEther = result.map(element => {
-                let temp = props.contract.web3.utils.fromWei(element, "ether")
+                let temp = contract.web3.utils.fromWei(element, "ether")
                 return (Math.round(temp * 100) / 100).toFixed(2)
             })
-            
             setInsurance(resultEther)
         }
         fetchPaidInsurance()
-    }, [])
+    }, [loaders, currentUser])
     
 
     const handleAmountChange= (e) => {
         let {name, value} = e.target
-        console.log(name, value);
         setAmount(prev => {
-            return {
-            ...prev, 
-            [name]: value,
-            }
+            return {...prev, [name]: value}
         })
-        // setAmount(prev => e.target.value)
     }
 
     const handleBuy = async () => {
-        console.log("Buy clicked");
+        setLoaders({...loaders, "buy": true})
         let flightKey = Object.keys(amount)[0]
-        let paid = amount[Object.keys(amount)[0]].toString()
-        paid = props.contract.web3.utils.toWei(paid, "ether")
+        // let paid = amount[Object.keys(amount)[0]].toString()
+        
+        let paid = amount[Object.keys(amount)[0]]
+        if (paid > 1) {
+            setMessage({
+                display: true,
+                header: "Error",
+                content: "Maximum amount is 1 Ether"
+            })
+            setLoaders({})
+            return
+        }
+        paid = contract.web3.utils.toWei(paid.toString(), "ether")
+
         console.log("FlightKey: ", flightKey)
         console.log("Amount: ", paid);
-        let result = await props.contract.flightSuretyApp.methods.buyInsurance(flightKey).send({from: props.account, value: paid})
+        try {
+            await contract.flightSuretyApp.methods.buyInsurance(flightKey).send({from: currentUser.account, value: paid})
+        } catch (error) {
+            handleError(error)
+        }
     }
 
     return (<>
@@ -59,12 +73,12 @@ const FlightTable = (props) => {
                     <Table.HeaderCell>ITINERARY</Table.HeaderCell>
                     <Table.HeaderCell>ARRIVAL TIME</Table.HeaderCell>
                     <Table.HeaderCell>STATUS</Table.HeaderCell>
-                    {props.userType === "Passenger" && 
+                    {currentUser.profile === "Passenger" && 
                     <Table.HeaderCell>BUY INSURANCE <br></br> Pay up to 1 Ether and get refunded 1.5 times <br></br>when Flight delayed due to Airline fault</Table.HeaderCell>}
                 </Table.Row>
             </Table.Header>
             <Table.Body>
-                {props.flights.map((flight, index) => {
+                {flights.map((flight, index) => {
                     let airline = flight.airline ? flight.airline.substring(0,10) + "..." : "Undefined"
                     //let amountInsurance = props.contract.web3.utils.fromWei(insurance[index], "ether")
                     return (<React.Fragment key={flight.number}>
@@ -74,7 +88,7 @@ const FlightTable = (props) => {
                             <Table.Cell>{flight.itinerary.toUpperCase()}</Table.Cell>
                             <Table.Cell>{flight.time}</Table.Cell>
                             <Table.Cell>ON TIME</Table.Cell>
-                            {(props.userType === "Passenger" && insurance[index]=== "0.00") &&
+                            {(currentUser.profile === "Passenger" && insurance[index]=== "0.00") &&
                             <Table.HeaderCell>
                                 <Input
                                     action={{
@@ -82,10 +96,11 @@ const FlightTable = (props) => {
                                     labelPosition: 'left',
                                     icon: 'ethereum',
                                     content: 'Buy Insurance',
+                                    loading: loaders.buy,
                                     onClick: handleBuy
                                     }}
                             
-                                    onClick={() => console.log("Buy clicked!")}
+                                    type="number"
                                     actionPosition='right'
                                     placeholder='Amount in Ether'
                                     name={flight.key}
@@ -96,10 +111,9 @@ const FlightTable = (props) => {
                                 />
                                 
                             </Table.HeaderCell>}
-                            {(props.userType === "Passenger" && insurance[index] !== "0.00") &&
+                            {(currentUser.profile === "Passenger" && insurance[index] !== "0.00") &&
                             <Table.HeaderCell>
                                 Insured for {insurance[index]} Ether
-                                {/* Paid for {props.contract.web3.utils.fromWei(insurance[index])} */}
                                 <Button
                                     floated="right"
                                 >
