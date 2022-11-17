@@ -74,28 +74,43 @@ const App = () => {
     return result
   }
 
+  const fetchFlights = async () => {
+    let result = await contract.flightSuretyApp.methods.getFlightsArray().call({from: connectedAccount})
+    let flightsTemp = []
+    for (let element of result ) {
+      let temp = await contract.flightSuretyApp.methods.getFlight(element).call({from: connectedAccount})
+      let flight = {
+        key: temp[0],
+        number: temp[1],
+        airline: temp[2],
+        itinerary: temp[3],
+        time: temp[4]
+      }
+      flightsTemp.push(flight)
+    }
+    setFlights(flightsTemp)
+  }
+
 
   useEffect(() => {
     const fetchInitialState = async () => {
-      let flightsTemp = []
-      let result = await contract.flightSuretyApp.methods.getFlightsArray().call({from: connectedAccount})
+      //let flightsTemp = []
       let op = await isOperational()
       let auth = await isAppContractAuthorized()
-      for (let element of result ) {
-        let temp = await contract.flightSuretyApp.methods.getFlight(element).call({from: connectedAccount})
-        let flight = {
-          key: temp[0],
-          number: temp[1],
-          airline: temp[2],
-          itinerary: temp[3],
-          time: temp[4]
-        }
-        flightsTemp.push(flight)
-      }
-      setFlights(flightsTemp)
-
-
-      
+      await fetchFlights()
+      // let result = await contract.flightSuretyApp.methods.getFlightsArray().call({from: connectedAccount})
+      // for (let element of result ) {
+      //   let temp = await contract.flightSuretyApp.methods.getFlight(element).call({from: connectedAccount})
+      //   let flight = {
+      //     key: temp[0],
+      //     number: temp[1],
+      //     airline: temp[2],
+      //     itinerary: temp[3],
+      //     time: temp[4]
+      //   }
+      //   flightsTemp.push(flight)
+      // }
+      // setFlights(flightsTemp)
       setOperational(op)
       setAppContractAuthorized(auth)
       console.log("fetch initial state complete", auth);
@@ -127,7 +142,7 @@ const App = () => {
           header: "Error",
           content: error
         })
-        setLoaders({...loaders, operational: false})
+        setLoaders({})
       } else {
         switch(result.event) {
           case "Operational": 
@@ -190,8 +205,18 @@ const App = () => {
                 content: `Flight key: ${key} ${number} ${airline} ${itinerary} ${time}`,
                 display: true
             })
-            setFlights(prev => [...prev, {key, number, airline, itinerary, time}])
+            fetchFlights()
             setLoaders({})
+            break
+          case "InsuranceBought":
+            console.log("InsuranceBought event");
+            let {flightKey, buyer, amount} = result.returnValues
+            console.log(`flightKey ${flightKey} bought from ${buyer} for ${amount} Ethers`)
+            setMessage({
+              header: "Insurance succesfully bought",
+              content: `flightKey ${flightKey} bought from ${buyer} for ${amount} Ethers`,
+              display: true
+            })
             break
           default:
             console.log("An event was received, but was not handled: ", result);
@@ -271,7 +296,10 @@ const App = () => {
               setFlights={setFlights}
             ></Airline>}
             {userType === "Passenger" && <Passenger
+              userType={userType}
               flights={flights}
+              account={connectedAccount}
+              contract={contract}
             ></Passenger>}
 
             {message.display && <Message

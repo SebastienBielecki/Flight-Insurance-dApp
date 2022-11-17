@@ -121,6 +121,8 @@ contract FlightSuretyApp {
 
     event RegisteredAirline (bool registerd, uint256 vote, uint256 totalAirlines);
 
+    event InsuranceBought (bytes32 flightKey, address buyer, uint256 amount);
+
     /********************************************************************************************/
     /*                                       UTILITY FUNCTIONS                                  */
     /********************************************************************************************/
@@ -213,6 +215,20 @@ contract FlightSuretyApp {
         flightsArray.push(key);
         emit FlightRegistered(key, flightNumber, _airline, _flight, _timestamp);
         flightNumber = flightNumber.add(1);
+    }
+
+    
+    function buyInsurance(bytes32 key) external payable {
+        dataContractAddress.transfer(msg.value);
+        flightSuretyData.buy(msg.sender, msg.value, key);
+        emit InsuranceBought(key, msg.sender, msg.value);
+    }
+
+    event PaidInsurances(uint256[] amounts);
+    function getPaidInsurance(bytes32[] _flights) public view returns(uint256[] amounts){
+        // returns(bytes32 memory keys[], uint256 memory amount[])
+        emit PaidInsurances(flightSuretyData.getPaidInsurance(msg.sender, _flights));
+        //return flightSuretyData.getPaidInsurance(msg.sender, _flights);
     }
     
    /**
@@ -382,5 +398,8 @@ contract FlightSuretyData {
     function getVotesCount(address airlineAddress) external view returns(uint);
     function hasNotVoted(address candidate, address voter) external view returns (bool);
     function registerVote(address candidate, address voter) external;
+    function buy(address _passenger, uint256 _amount, bytes32 _flight) external payable;
+    function getPaidInsurance(address passenger, bytes32[] flights) external view returns(uint256[]);
+
 
 }

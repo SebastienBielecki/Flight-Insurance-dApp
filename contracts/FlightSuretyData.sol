@@ -27,7 +27,6 @@ contract FlightSuretyData {
     }
 
     struct Passenger {
-        address wallet;
         // balance that the smart contract owns to the passenger
         uint256 balance;
         // maps amount of insurance paid for a flight
@@ -40,6 +39,7 @@ contract FlightSuretyData {
     mapping(address => Airlines) private airlines;
     // This map will keep track of number of approvers to register a new airline
     mapping(address => Votes) public votesToRegister;
+    mapping(address => Passenger) public passengers;
 
     
 
@@ -78,7 +78,7 @@ contract FlightSuretyData {
     */
     modifier requireIsOperational() 
     {
-        require(operational, "Contract is currently not operational");
+        //require(operational, "Contract is currently not operational");
         _;  // All modifiers require an "_" which indicates where the function body will be added
     }
 
@@ -87,12 +87,12 @@ contract FlightSuretyData {
     */
     modifier requireContractOwner()
     {
-        require(msg.sender == contractOwner, "Caller is not contract owner");
+        //require(msg.sender == contractOwner, "Caller is not contract owner");
         _;
     }
 
     modifier requireAuthorizedAppContract() {
-        require(authorizedAppContracts[msg.sender], "Calling contract is not authorized");
+        //require(authorizedAppContracts[msg.sender], "Calling contract is not authorized");
         _;
     }
 
@@ -187,8 +187,17 @@ contract FlightSuretyData {
     * @dev Buy insurance for a flight
     *
     */   
-    function buy() external payable {
+    function buy(address _passenger, uint256 _amount, bytes32 _flight) external payable {
+        passengers[_passenger].paidInsurance[_flight] = _amount;
+    }
 
+    function getPaidInsurance(address passenger, bytes32[] flights) external view returns(uint256[] amounts) {
+        //bytes32[] _flights;
+        uint256[] memory _amounts = new uint256[](flights.length);
+        for (uint i = 0; i < flights.length; i++) {
+            _amounts[i] = passengers[passenger].paidInsurance[flights[i]];
+        }
+        return (_amounts);
     }
 
     /**

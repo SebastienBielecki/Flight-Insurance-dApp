@@ -122,6 +122,7 @@ const Airline = (props) => {
                 <Grid.Column width = {11}>
                     <h2>Flights</h2>
                     <FlightTable
+                        props={props.contract}
                         flights={props.flights}
                     ></FlightTable>
                     <Button onClick={props.getFlightsArray} primary>Get Flight Array</Button>
