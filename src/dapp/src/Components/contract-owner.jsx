@@ -19,7 +19,7 @@ const ContractOwner = () => {
 
     console.log("Render Contract Owner");
 
-    const [balance, setBalance] = useState()
+    const [balances, setBalances] = useState({data: "", app: ""})
 
     const toggleOperationalStatus = async () => {
         setLoaders({...loaders, operational: true})
@@ -36,23 +36,25 @@ const ContractOwner = () => {
         setLoaders({...loaders, authorized: true})
         try {
             await contract.flightSuretyData.methods.toggleAppContractAuthorization(contract.flightSuretyApp._address).send({from: currentUser.account})
+            setLoaders({})
         } catch (error) {
             handleError(error)
         }
         
     }
 
-    const getContractBalance = async () => {
-        let balance = await contract.web3.eth.getBalance(contract.flightSuretyData._address)
-        balance = contract.web3.utils.fromWei(balance, "ether")
-        setBalance(balance)
+    const getContractsBalances = async () => {
+        let balanceData = await contract.web3.eth.getBalance(contract.flightSuretyData._address)
+        let balanceApp = await contract.web3.eth.getBalance(contract.flightSuretyApp._address)
+        balanceData = contract.web3.utils.fromWei(balanceData, "ether")
+        balanceApp = contract.web3.utils.fromWei(balanceApp, "ether")
+        setBalances({balanceData, balanceApp})
     }
 
-    const init = async () => {
-        await getContractBalance()
-    }  
-
-    init()
+    useEffect(() => {
+        getContractsBalances()
+    }, [])
+    
 
     return (<>
         <div className="admin-container">
@@ -90,7 +92,8 @@ const ContractOwner = () => {
                     <p className="address">{contract.flightSuretyData._address}</p>
                     <Divider></Divider>
                     <div className="row">
-                        <p>Funds in Contract: {(Math.round(balance * 100) / 100).toFixed(2)} Ethers</p>
+                        <p>Funds in Data Contract: {(Math.round(balances.balanceData * 100) / 100).toFixed(2)} Ethers</p>
+                        <p>Funds in App Contract: {(Math.round(balances.balanceApp * 100) / 100).toFixed(2)} Ethers</p>
                     </div>
                 </GridColumn>
             </Grid>

@@ -166,7 +166,9 @@ contract FlightSuretyApp {
         return flightNumber;
     }
 
-    
+    function getBalance() public view returns (uint256) {
+
+    }
 
 
     /********************************************************************************************/
@@ -300,16 +302,13 @@ contract FlightSuretyApp {
 
 
     // Register an oracle with the contract
-    function registerOracle() external payable {
+    function registerOracle() external payable returns(bool, uint8[3]){
         // Require registration fee
         require(msg.value >= REGISTRATION_FEE, "Registration fee is required");
 
         uint8[3] memory indexes = generateIndexes(msg.sender);
-
-        oracles[msg.sender] = Oracle({
-                                        isRegistered: true,
-                                        indexes: indexes
-                                    });
+        oracles[msg.sender] = Oracle({isRegistered: true, indexes: indexes});
+        return(true, indexes);
     }
 
     function getMyIndexes() view external returns(uint8[3]) {

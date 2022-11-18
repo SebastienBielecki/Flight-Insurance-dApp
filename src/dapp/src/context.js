@@ -6,16 +6,17 @@ const AppContext = React.createContext()
 const AppProvider = ({children}) => {
 
     const [loaders, setLoaders] = useState({})
-    const [message, setMessage] = useState({header: "", content: "", display:false})
+    const [message, setMessage] = useState({header: "", content: "", display:false, type: ""})
     const [currentUser, setCurrentUser] = useState({})
     const [appContractAuthorized, setAppContractAuthorized] = useState(false)
     const [operational, setOperational] = useState(false);
     const [flights, setFlights] = useState([])
-    
+    const [fetching, setFetching] = useState(false)
 
     const handleError = (error) => {
         console.log(error);
         setMessage({
+            negative: true,
             display: true,
             header: "There was an error",
             content: error.message
@@ -39,6 +40,8 @@ const AppProvider = ({children}) => {
                 setAppContractAuthorized,
                 flights,
                 setFlights,
+                fetching,
+                setFetching
               }}
         >
             {children}

@@ -25,6 +25,9 @@ const App = () => {
     setAppContractAuthorized,
     flights,
     setFlights,
+    operational,
+    appContractAuthorized,
+    setFetching
   } = useGlobalContext()
 
   console.log("Render from App.js");
@@ -80,12 +83,19 @@ const App = () => {
 
   useEffect(() => {
     const fetchInitialState = async () => {
+      setFetching(true)
       let op = await isOperational()
-      let auth = await isAppContractAuthorized()
-      await fetchFlights()
+      let authorized = await isAppContractAuthorized()
+      console.log("contract authorized: ", authorized);
+      try {
+        await fetchFlights()
+      } catch (error) {
+        console.log("No flights registered");
+      }
       setOperational(op)
-      setAppContractAuthorized(auth)
-      console.log("fetch initial state complete", auth);
+      setAppContractAuthorized(authorized)
+      console.log("fetch initial state complete");
+      setFetching(false)
     }
 
     fetchInitialState()
@@ -120,6 +130,7 @@ const App = () => {
           case "Operational": 
             console.log("Operational event received", result.event);
             setMessage({
+              positive: true,
               display: true,
               header: `Operational mode set to ${result.returnValues.mode}`
             })
@@ -130,12 +141,14 @@ const App = () => {
               console.log("RegisteredAirline event", result.event)
               if (result.returnValues[0]) {
                 setMessage({
+                    positive: true,
                     display: true,
                     header: "Succesfully registered",
                     content: `${result.returnValues[1]} votes out of ${result.returnValues[2]}`
                 })
               } else {
                 setMessage({
+                    positive: true,
                     display: true,
                     header: "Thank you for your vote",
                     content: `${result.returnValues[1]} vote(s) out of ${result.returnValues[2]}`
@@ -146,6 +159,7 @@ const App = () => {
           case "Funded":
             console.log("Funded event")
             setMessage({
+              positive: true,
               display: true,
               header: "Funds successfully transfered",
               content: "You can now register flights and vote for new airlines to participate"
@@ -156,12 +170,14 @@ const App = () => {
             console.log("AirlineRegistered event");
             if (result.returnValues[0]) {
               setMessage({
+                  positive: true,
                   display: true,
                   header: "Succesfully registered",
                   content: `${result.returnValues[1]} votes out of ${result.returnValues[2]}`
               })
             } else {
               setMessage({
+                  positive: true,
                   display: true,
                   header: "Thank you for your vote",
                   content: `${result.returnValues[1]} vote(s) out of ${result.returnValues[2]}`
@@ -173,6 +189,7 @@ const App = () => {
             console.log("FlightRegistered event")
             let {key, number, airline, itinerary, time} = result.returnValues
             setMessage({
+                positive: true,
                 header: "Flight succesfully registered",
                 content: `Flight key: ${key} ${number} ${airline} ${itinerary} ${time}`,
                 display: true
@@ -183,17 +200,29 @@ const App = () => {
           case "InsuranceBought":
             console.log("InsuranceBought event");
             let {flightKey, buyer, amount} = result.returnValues
+            amount = contract.web3.utils.fromWei(amount, "ether")
             console.log(`flightKey ${flightKey} bought from ${buyer} for ${amount} Ethers`)
             setMessage({
+              positive: true,
               header: "Insurance succesfully bought",
               content: `flightKey ${flightKey} bought from ${buyer} for ${amount} Ethers`,
               display: true
             })
             setLoaders({})
             break
+          case "OracleRequest":
+            console.log("OracleRequestEvent")
+            console.log(`Index ${result.returnValues[0]} Airline ${result.returnValues[1]} Itinerary ${result.returnValues[2]} Time ${result.returnValues[3]}`);
+            break
+            //emit OracleReport(airline, flight, timestamp, statusCode);
+          case "OracleReport":
+            console.log("***** ORACLE REPORT EVENT **** ")
+            console.log(result.returnValues);
+            break
           default:
             console.log("An event was received, but was not handled: ", result);
             setMessage({
+              warning: true,
               display: true,
               header: "Unknow event received",
               content: {result}
@@ -207,7 +236,7 @@ const App = () => {
       appListener = null;
       dataListener = null;
     }
-  }, [])
+  }, [currentUser])
     
   
 
@@ -241,17 +270,26 @@ const App = () => {
         <Button 
           loading={loadingMeta}
           className="metamask-btn"
-          primary
+          
+          color="orange"
           onClick={() => connectMetamask()}
           size="massive"
           >
-          Connect Metamask
+          Login with Metamask
         </Button>
         </div>}
             {(currentUser.profile === "Owner") && <ContractOwner/>}
-            {currentUser.profile === "Airline" && <Airline/>}
-            {currentUser.profile === "Passenger" && <Passenger/>}
+            {currentUser.profile === "Airline" && appContractAuthorized && operational && <Airline/>}
+            {currentUser.profile === "Passenger" && appContractAuthorized && operational &&<Passenger/>}
+            {(currentUser.profile !== "Owner" && (!appContractAuthorized || !operational)) &&<Message
+              icon='thumbs down outline'
+              header='The service is not active'
+              content={`${operational ? "": "Contract is not operational."} ${appContractAuthorized ? "": "App contract is not authorized by Data Contract."}`}
+            />}
             {message.display && <Message
+                positive={message.positive}
+                negative={message.negative}
+                warning={message.warning}
                 header={message.header}
                 content={message.content}
             >

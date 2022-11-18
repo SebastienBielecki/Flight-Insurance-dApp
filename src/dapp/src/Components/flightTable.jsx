@@ -18,9 +18,7 @@ const FlightTable = () => {
             flights.forEach(element => {
                 input.push(element.key)
             });
-            console.log("input of fectInsurances", input);
             let result = await contract.flightSuretyData.methods.getPaidInsurance(currentUser.account, input).call({from: currentUser.account})
-            console.log("result of fetch insurances", result);
             let resultEther = result.map(element => {
                 let temp = contract.web3.utils.fromWei(element, "ether")
                 return (Math.round(temp * 100) / 100).toFixed(2)
@@ -39,13 +37,16 @@ const FlightTable = () => {
     }
 
     const handleBuy = async () => {
-        setLoaders({...loaders, "buy": true})
         let flightKey = Object.keys(amount)[0]
+        console.log("FlightKey: ", flightKey);
+        setLoaders({...loaders, [flightKey]: true})
+        
         // let paid = amount[Object.keys(amount)[0]].toString()
         
         let paid = amount[Object.keys(amount)[0]]
         if (paid > 1) {
             setMessage({
+                negative: true,
                 display: true,
                 header: "Error",
                 content: "Maximum amount is 1 Ether"
@@ -62,6 +63,25 @@ const FlightTable = () => {
         } catch (error) {
             handleError(error)
         }
+    }
+
+    const handleClickOracle = async (airline, itinerary, time, key) => {
+        console.log(airline, itinerary, time);
+        setLoaders({oracle: true, [key]: true})
+        try {
+            let result = await contract.flightSuretyApp.methods.fetchFlightStatus(airline, itinerary, Number(time)).send({from: currentUser.account})
+            console.log(result);
+            setLoaders({})
+            setMessage({
+                positive: true,
+                display: true,
+                header: "Request successfully sent to Oracles",
+                content: "Oracles are sending the answer."
+            })
+        } catch (error) {
+            handleError(error)
+        }
+        
     }
 
     return (<>
@@ -81,8 +101,7 @@ const FlightTable = () => {
                 {flights.map((flight, index) => {
                     let airline = flight.airline ? flight.airline.substring(0,10) + "..." : "Undefined"
                     //let amountInsurance = props.contract.web3.utils.fromWei(insurance[index], "ether")
-                    return (<React.Fragment key={flight.number}>
-                        <Table.Row>
+                    return (<Table.Row key={flight.key}>
                             <Table.Cell>{flight.number}</Table.Cell>
                             <Table.Cell>{airline.toUpperCase()}</Table.Cell>
                             <Table.Cell>{flight.itinerary.toUpperCase()}</Table.Cell>
@@ -96,7 +115,7 @@ const FlightTable = () => {
                                     labelPosition: 'left',
                                     icon: 'ethereum',
                                     content: 'Buy Insurance',
-                                    loading: loaders.buy,
+                                    loading: loaders[flight.key],
                                     onClick: handleBuy
                                     }}
                             
@@ -115,14 +134,16 @@ const FlightTable = () => {
                             <Table.HeaderCell>
                                 Insured for {insurance[index]} Ether
                                 <Button
+                                    loading={loaders[flight.key] && loaders.oracle}
                                     floated="right"
+                                    onClick={() => handleClickOracle(flight.airline, flight.itinerary, flight.time, flight.key)}
                                 >
-                                    Check Oracles
+                                    Ask Oracles
                                 </Button>
                                 
                             </Table.HeaderCell>}
-                        </Table.Row>
-                    </React.Fragment>)
+                        </Table.Row>)
+                    {/* </React.Fragment>) */}
                 })}
             </Table.Body>
         </Table>
