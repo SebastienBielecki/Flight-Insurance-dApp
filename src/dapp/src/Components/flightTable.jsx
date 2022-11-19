@@ -5,32 +5,55 @@ import "./flightTable.css"
 import { useGlobalContext } from '../context';
 import contract from '../contract';
 
-const FlightTable = () => {
+const FlightTable = ({getBalance}) => {
     const { loaders, setLoaders, message, setMessage, handleError, currentUser, flights } = useGlobalContext()
     const [amount, setAmount] = useState({})
     const [insurance, setInsurance] = useState([])
+    const [insuranceCredited, setInsuranceCredited] = useState([])
     console.log("render FlightTable");
 
-    
+    const fetchPaidInsurance = async () => {
+        console.log("FETCH PAID INSURANCES TRIGGERED");
+        let flightKeys = []
+        flights.forEach(element => {
+            flightKeys.push(element.key)
+        });
+        let insurances = await contract.flightSuretyData.methods.getPaidInsurance(currentUser.account, flightKeys).call({from: currentUser.account})
+        let insurancesRefunded = await contract.flightSuretyData.methods.getPaidInsuranceStatus(currentUser.account, flightKeys).call({from: currentUser.account})
+        let insurancesEther = insurances.map(element => {
+            let temp = contract.web3.utils.fromWei(element, "ether")
+            return (Math.round(temp * 100) / 100).toFixed(2)
+        })
+        setInsurance(insurancesEther)
+        setInsuranceCredited(insurancesRefunded)
+    }
+
+    const creditInsuree = async (i) => {
+            console.log("CREDIT INSUREE TRIGGERED");
+            console.log(insurance[i], insuranceCredited[i], flights[i].statusCode);
+            if (flights[i].statusCode === "20" && insurance[i] !== "0" && !insuranceCredited[i]) {
+                try {
+                    console.log("refund conidition met");
+                    await contract.flightSuretyData.methods.creditInsurees(currentUser.account, flights[i].key).send({from: currentUser.account})
+                } catch (error) {
+                    console.log(error.message);
+                }
+            }
+        await getBalance()
+        await fetchPaidInsurance()
+    }
+
     useEffect(() => {
-        const fetchPaidInsurance = async () => {
-            let input = []
-            flights.forEach(element => {
-                input.push(element.key)
-            });
-            let result = await contract.flightSuretyData.methods.getPaidInsurance(currentUser.account, input).call({from: currentUser.account})
-            let resultEther = result.map(element => {
-                let temp = contract.web3.utils.fromWei(element, "ether")
-                return (Math.round(temp * 100) / 100).toFixed(2)
-            })
-            setInsurance(resultEther)
+        
+        if (currentUser.profile === "Passenger") {
+            fetchPaidInsurance()
         }
-        fetchPaidInsurance()
-    }, [loaders, currentUser])
+    }, [currentUser])
     
 
     const handleAmountChange= (e) => {
         let {name, value} = e.target
+        console.log(amount);
         setAmount(prev => {
             return {...prev, [name]: value}
         })
@@ -63,6 +86,9 @@ const FlightTable = () => {
         } catch (error) {
             handleError(error)
         }
+        setAmount({})
+        await fetchPaidInsurance()
+        await getBalance()
     }
 
     const handleClickOracle = async (airline, itinerary, time, key) => {
@@ -94,7 +120,7 @@ const FlightTable = () => {
                     <Table.HeaderCell>ARRIVAL TIME</Table.HeaderCell>
                     <Table.HeaderCell>STATUS</Table.HeaderCell>
                     {currentUser.profile === "Passenger" && 
-                    <Table.HeaderCell>BUY INSURANCE <br></br> Pay up to 1 Ether and get refunded 1.5 times <br></br>when Flight delayed due to Airline fault</Table.HeaderCell>}
+                    <Table.HeaderCell>BUY INSURANCE</Table.HeaderCell>}
                 </Table.Row>
             </Table.Header>
             <Table.Body>
@@ -106,8 +132,8 @@ const FlightTable = () => {
                             <Table.Cell>{airline.toUpperCase()}</Table.Cell>
                             <Table.Cell>{flight.itinerary.toUpperCase()}</Table.Cell>
                             <Table.Cell>{flight.time}</Table.Cell>
-                            <Table.Cell>ON TIME</Table.Cell>
-                            {(currentUser.profile === "Passenger" && insurance[index]=== "0.00") &&
+                            <Table.Cell>{contract.statusCodes[flight.statusCode]}</Table.Cell>
+                            {(currentUser.profile === "Passenger" && insurance[index]=== "0.00" && flight.statusCode === "0") &&
                             <Table.HeaderCell>
                                 <Input
                                     action={{
@@ -130,7 +156,7 @@ const FlightTable = () => {
                                 />
                                 
                             </Table.HeaderCell>}
-                            {(currentUser.profile === "Passenger" && insurance[index] !== "0.00") &&
+                            {(currentUser.profile === "Passenger" && insurance[index] !== "0.00" && flight.statusCode === "0") &&
                             <Table.HeaderCell>
                                 Insured for {insurance[index]} Ether
                                 <Button
@@ -142,6 +168,34 @@ const FlightTable = () => {
                                 </Button>
                                 
                             </Table.HeaderCell>}
+                            {(currentUser.profile === "Passenger" && insurance[index] !== "0.00" && !insuranceCredited[index] && flight.statusCode !== "20" && flight.statusCode !=="0") &&
+                            <Table.HeaderCell>
+                                    Insurance paid ${insurance[index]} Ether
+                                    <br></br>
+                                    Not refundable (On time or no Airline responsiblity)
+                            </Table.HeaderCell>}
+                            {(currentUser.profile === "Passenger" && insurance[index] != "0.00" && !insuranceCredited[index] && flight.statusCode === "20") &&
+                            <Table.HeaderCell>
+                                    Insurance paid ${insurance[index]} Ether
+                                    <Button 
+                                        floated="right"
+                                        onClick={() => creditInsuree(index)}>
+                                        Refund
+                                    </Button>
+                
+                            </Table.HeaderCell>}
+                            {(currentUser.profile === "Passenger" && insurance[index] !== "0.00" && insuranceCredited[index] && flight.statusCode === "20") &&
+                            <Table.HeaderCell>
+                                    Insurance paid ${insurance[index]} Ether
+                                    <br></br>
+                                    Credited 1.5X (Airline responsibility)
+                            </Table.HeaderCell>}
+                            {(currentUser.profile === "Passenger" && insurance[index] === "0.00" && flight.statusCode !== "0") &&
+                            <Table.HeaderCell>
+                                    No insurance paid
+                            </Table.HeaderCell>}
+                            
+                            
                         </Table.Row>)
                     {/* </React.Fragment>) */}
                 })}

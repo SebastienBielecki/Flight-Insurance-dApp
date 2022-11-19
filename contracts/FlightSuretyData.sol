@@ -31,6 +31,7 @@ contract FlightSuretyData {
         uint256 balance;
         // maps amount of insurance paid for a flight
         mapping(bytes32 => uint256) paidInsurance;
+        mapping(bytes32 => bool) refundedInsurance;
     }
     uint256 private registeredAirlinesTotal;
     uint256 private haveFundedAirlinesTotal;
@@ -167,6 +168,10 @@ contract FlightSuretyData {
         votesToRegister[candidate].approvalCount =  votesToRegister[candidate].approvalCount.add(1);
     }
 
+    function getPassengerCredit(address passenger) public view returns(uint256) {
+        return passengers[passenger].balance;
+    }
+
 
     /********************************************************************************************/
     /*                                     SMART CONTRACT FUNCTIONS                             */
@@ -200,10 +205,22 @@ contract FlightSuretyData {
         return (_amounts);
     }
 
+    function getPaidInsuranceStatus(address passenger, bytes32[] flights) external view returns(bool[] refunded) {
+        //bytes32[] _flights;
+        bool[] memory _refunded = new bool[](flights.length);
+        for (uint i = 0; i < flights.length; i++) {
+            _refunded[i] = passengers[passenger].refundedInsurance[flights[i]];
+        }
+        return (_refunded);
+    }
+
     /**
      *  @dev Credits payouts to insurees
     */
-    function creditInsurees() external pure {
+    function creditInsurees(address passenger, bytes32 flightKey) external {
+        require(!passengers[passenger].refundedInsurance[flightKey], "Already refunded");
+        passengers[passenger].refundedInsurance[flightKey] = true;
+        passengers[passenger].balance = passengers[passenger].balance.add(passengers[passenger].paidInsurance[flightKey].mul(3).div(2));
     }
     
 
@@ -211,7 +228,10 @@ contract FlightSuretyData {
      *  @dev Transfers eligible payout funds to insuree
      *
     */
-    function pay() external pure {
+    function pay(address passenger) external {
+        uint256 balance = passengers[passenger].balance;
+        passengers[passenger].balance = 0;
+        passenger.transfer(balance);
     }
 
    /**

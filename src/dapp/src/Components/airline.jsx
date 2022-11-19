@@ -10,13 +10,14 @@ const Airline = (props) => {
     console.log("Render Airlines");
     const [airlineInfo, setAirlineinfo] = useState({name: "", registered: false, funded: false})
     const [address, setAddress] = useState("")
-    const [flight, setFlight] = useState({airline: "", itinerary: "", time: "", code: generateStatusCode()})
+    const [flight, setFlight] = useState({airline: "", itinerary: "", time: ""})
 
     const { 
         loaders, 
         setLoaders, 
         handleError, 
-        currentUser 
+        currentUser,
+        setFetching
     } = useGlobalContext()
     
     const handleChange = (e) => {
@@ -42,12 +43,12 @@ const Airline = (props) => {
             setFlight(prev => {
                 return {...prev, number}
             })
-            await contract.flightSuretyApp.methods.registerFlight(flight.airline, flight.time, flight.code, flight.itinerary).send({from: currentUser.account})
+            await contract.flightSuretyApp.methods.registerFlight(flight.airline, flight.time, 0, flight.itinerary).send({from: currentUser.account})
         } catch (error) {
             handleError(error)
         }
         // prepare status code for next flight
-        setFlight({code: generateStatusCode(), itinerary: "", time: ""})
+        setFlight({itinerary: "", time: ""})
     }
 
     const submitAirline = async (add) => {
@@ -72,6 +73,7 @@ const Airline = (props) => {
     }
 
     const getAirlineInfo = async () => {
+        
         try {
             let result = await contract.flightSuretyApp.methods.getAirlineInfo(currentUser.account).call()
             setAirlineinfo({
@@ -82,9 +84,12 @@ const Airline = (props) => {
         } catch (error) {
             handleError(error)
         }
+        
     }
 
-    useEffect(() => {getAirlineInfo()}, [currentUser.account])
+    useEffect(() => {
+        getAirlineInfo()
+    }, [currentUser])
 
     return (<>
         <Grid>

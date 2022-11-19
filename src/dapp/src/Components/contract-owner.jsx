@@ -21,18 +21,16 @@ const ContractOwner = () => {
 
     const [balances, setBalances] = useState({data: "", app: ""})
 
-    const toggleOperationalStatus = async () => {
+    const toggleOperationalStatusApp = async () => {
         setLoaders({...loaders, operational: true})
         try {
             await contract.flightSuretyApp.methods.toggleOperationalStatus().send({from: currentUser.account});
         } catch (error) {
             handleError(error)
         }
-        
-
     }
     
-    const toggleAuthorization = async (mode) => {
+    const toggleAuthorization = async () => {
         setLoaders({...loaders, authorized: true})
         try {
             await contract.flightSuretyData.methods.toggleAppContractAuthorization(contract.flightSuretyApp._address).send({from: currentUser.account})
@@ -40,7 +38,6 @@ const ContractOwner = () => {
         } catch (error) {
             handleError(error)
         }
-        
     }
 
     const getContractsBalances = async () => {
@@ -53,7 +50,7 @@ const ContractOwner = () => {
 
     useEffect(() => {
         getContractsBalances()
-    }, [])
+    }, [currentUser])
     
 
     return (<>
@@ -66,7 +63,7 @@ const ContractOwner = () => {
                     <div className="row">
                         <p>{operational ? "Contract is Operational" : "Contract is not operational"}</p>
                         <Button 
-                            onClick={() => toggleOperationalStatus()} 
+                            onClick={() => toggleOperationalStatusApp()} 
                             primary
                             loading={loaders.operational}
                             floated="right"
@@ -82,7 +79,7 @@ const ContractOwner = () => {
                             loading={loaders.authorized}
                             floated="right"
                             >
-                            {!appContractAuthorized ? "Authorize" : "Deauthorize"}
+                            {!appContractAuthorized ? "Authorize" : "Forbid access"}
                         </Button>
                     </div>
                 </Grid.Column>

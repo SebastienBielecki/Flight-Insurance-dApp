@@ -154,8 +154,8 @@ contract FlightSuretyApp {
         return flightSuretyData.getVotesCount(candidate);
     }
 
-    function getFlight(bytes32 key) public view returns (bytes32, uint, address, string, uint256) {
-        return (key, flights[key].number, flights[key].airline, flights[key].flight, flights[key].updatedTimestamp);
+    function getFlight(bytes32 key) public view returns (bytes32, uint, address, string, uint256, uint8) {
+        return (key, flights[key].number, flights[key].airline, flights[key].flight, flights[key].updatedTimestamp, flights[key].statusCode);
     }
 
     function getFlightsArray() public view returns(bytes32[]) {
@@ -232,13 +232,16 @@ contract FlightSuretyApp {
         emit PaidInsurances(flightSuretyData.getPaidInsurance(msg.sender, _flights));
         //return flightSuretyData.getPaidInsurance(msg.sender, _flights);
     }
+
+    
     
    /**
     * @dev Called after oracle has updated flight status
     *
     */  
-    function processFlightStatus(address airline, string memory flight, uint256 timestamp, uint8 statusCode) internal pure {
-    
+    function processFlightStatus(address airline, string memory flight, uint256 timestamp, uint8 statusCode) internal {
+        bytes32 key = getFlightKey(airline, flight, timestamp);
+        flights[key].statusCode = statusCode;
     }
 
 

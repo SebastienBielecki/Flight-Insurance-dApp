@@ -63,43 +63,30 @@ const App = () => {
     return result
   }
 
+  
+
   const fetchFlights = async () => {
+    setFetching(true)
     let result = await contract.flightSuretyApp.methods.getFlightsArray().call({from: currentUser.account})
     let flightsTemp = []
     for (let element of result ) {
       let temp = await contract.flightSuretyApp.methods.getFlight(element).call({from: currentUser.account})
+      //console.log("Fetch FLight result: ",)
       let flight = {
         key: temp[0],
         number: temp[1],
         airline: temp[2],
         itinerary: temp[3],
-        time: temp[4]
+        time: temp[4],
+        statusCode: temp[5]
       }
       flightsTemp.push(flight)
     }
     setFlights(flightsTemp)
+    setFetching(false)
   }
 
-
   useEffect(() => {
-    const fetchInitialState = async () => {
-      setFetching(true)
-      let op = await isOperational()
-      let authorized = await isAppContractAuthorized()
-      console.log("contract authorized: ", authorized);
-      try {
-        await fetchFlights()
-      } catch (error) {
-        console.log("No flights registered");
-      }
-      setOperational(op)
-      setAppContractAuthorized(authorized)
-      console.log("fetch initial state complete");
-      setFetching(false)
-    }
-
-    fetchInitialState()
-    // set listeners
     let dataListener = contract.flightSuretyData.events.Authorized((error, result) => {
       console.log("authorized event from DATA SC");
       if (error) {
@@ -218,6 +205,7 @@ const App = () => {
           case "OracleReport":
             console.log("***** ORACLE REPORT EVENT **** ")
             console.log(result.returnValues);
+            fetchFlights()
             break
           default:
             console.log("An event was received, but was not handled: ", result);
@@ -231,12 +219,24 @@ const App = () => {
         }
       }
     });
-    // clean up function
-    return () => {
-      appListener = null;
-      dataListener = null;
+  }, [])
+
+  useEffect(() => {
+    const fetchInitialStatus = async () => {
+      let op = await isOperational()
+      let authorized = await isAppContractAuthorized()
+      console.log("contract authorized: ", authorized);
+      setOperational(op)
+      setAppContractAuthorized(authorized)
     }
-  }, [currentUser])
+    console.log("useEffect [] app.js, fetch contract status")
+    setFetching(true)
+    fetchInitialStatus()
+    fetchFlights()
+    setFetching(false)
+
+  }, [])
+
     
   
 

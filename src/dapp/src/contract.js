@@ -19,6 +19,20 @@ class Contract {
         this.airlines = [];
         this.passengers = [];
         this.initialize(network);
+        this.statusCodes = {
+            0: "UNKNOWN",
+            10: "ON TIME",
+            20: "LATE AIRLINE",
+            30: "LATE WEATHER",
+            40: "LATE TECHNICAL",
+            50: "LATE OTHER"
+        }
+    //     uint8 private constant STATUS_CODE_UNKNOWN = 0;
+    // uint8 private constant STATUS_CODE_ON_TIME = 10;
+    // uint8 private constant STATUS_CODE_LATE_AIRLINE = 20;
+    // uint8 private constant STATUS_CODE_LATE_WEATHER = 30;
+    // uint8 private constant STATUS_CODE_LATE_TECHNICAL = 40;
+    // uint8 private constant STATUS_CODE_LATE_OTHER = 50;
         
     }
 

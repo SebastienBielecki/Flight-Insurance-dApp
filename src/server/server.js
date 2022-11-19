@@ -15,7 +15,7 @@ let accounts;
 
 const FEE = web3.utils.toWei("1", "ether")
 
-const ORACLES_COUNT = 1
+const ORACLES_COUNT = 20
 
 //this counter will count the number of Oracle requests emited
 let counter = 0;
@@ -63,6 +63,7 @@ flightSuretyApp.events.OracleRequest({fromBlock: 0}, function (error, event) {
     for (let i = 0; i< ORACLES_COUNT; i++) {
       submitOracleResponse(i,index,airline, flight, timestamp, statusFlight[counter])
     }
+    counter++
   }
 );
 

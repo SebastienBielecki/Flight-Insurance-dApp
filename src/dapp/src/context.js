@@ -9,7 +9,7 @@ const AppProvider = ({children}) => {
     const [message, setMessage] = useState({header: "", content: "", display:false, type: ""})
     const [currentUser, setCurrentUser] = useState({})
     const [appContractAuthorized, setAppContractAuthorized] = useState(false)
-    const [operational, setOperational] = useState(false);
+    const [operational, setOperational] = useState();
     const [flights, setFlights] = useState([])
     const [fetching, setFetching] = useState(false)
 

@@ -1,35 +1,54 @@
 import "./passengers.css"
 import FlightTable from "./flightTable"
-import { Divider, Button, Input, Card } from "semantic-ui-react"
+import { Divider, Button, Input, Card, Header } from "semantic-ui-react"
 import { useEffect, useState } from "react"
 import { useGlobalContext } from "../context"
 import contract from '../contract';
 
 
 const Passenger = () => {
-    const { loaders, setLoaders, message, setMessage, handleError, currentUser } = useGlobalContext()
+    const { loaders, setLoaders, message, setMessage, handleError, currentUser, insurance } = useGlobalContext()
     let shortAccount = currentUser.account.substring(0,10) + "..."
-    const [balance, setBalance] = useState()
-    const [fetchPaidInsurance, setPaidInsurance] = useState([])
+    const [balances, setBalances] = useState({})
+    //const [fetchPaidInsurance, setPaidInsurance] = useState([])
 
+    const getBalance = async () => {
+        console.log("get balance triggered");
+        try {
+            let balance = await contract.web3.eth.getBalance(currentUser.account)
+            balance = contract.web3.utils.fromWei(balance, "ether")
+            balance = (Math.round(balance * 100) / 100).toFixed(2)
+            let credit = await contract.flightSuretyData.methods.getPassengerCredit(currentUser.account).call({from: currentUser.account})
+            credit = contract.web3.utils.fromWei(credit, "ether")
+            credit = (Math.round(credit * 100) / 100).toFixed(2)
+            setBalances({balance, credit})
+        } catch (error) {
+            handleError(error)
+        }
+    }
     
     useEffect(() => {
-        const getBalance = async () => {
-            try {
-                let result = await contract.web3.eth.getBalance(currentUser.account)
-                result = contract.web3.utils.fromWei(result, "ether")
-                result = (Math.round(result * 100) / 100).toFixed(2)
-                setBalance(result)
-            } catch (error) {
-                handleError(error)
-            }
-        }
         getBalance()
-    }, [])
+    },[currentUser])
+
+    const handleRefund = async () => {
+        setLoaders({refund: true})
+        try {
+            await contract.flightSuretyData.methods.pay(currentUser.account).send({from: currentUser.account})
+            setLoaders({})
+        } catch (error) {
+            handleError(error)
+        }
+        await getBalance()
+    }
     
 
     return (<>
-        <FlightTable/>
+        <Header as='h2' color="blue">Buy insurance</Header>
+        and get refunded 1.5 times if flight is late due to airline responsiblity
+        <FlightTable
+            getBalance={getBalance}
+        />
         <Divider></Divider>
         {/* <h3 className="form label-form">Flight #</h3> 
         <Input type="text" id="flight-number"></Input>
@@ -41,22 +60,23 @@ const Passenger = () => {
                     <Card.Header>Funds in my personal Wallet</Card.Header>
                     <Card.Meta>{shortAccount}</Card.Meta>
                     <Card.Description>
-                    {balance + " Ethers"}
+                    {balances.balance + " Ethers"}
                     </Card.Description>
                 </Card.Content>
             </Card>
             <Card>
                 <Card.Content>
                     <Card.Header>Available Funds</Card.Header>
-                    <Card.Meta>Paid insurance from delayed flights</Card.Meta>
+                    <Card.Meta>Credited insurance from delayed flights</Card.Meta>
                     <Card.Description>
-                    {balance + " Ethers"}
+                    {balances.credit + " Ethers"}
                     </Card.Description>
                 </Card.Content>
                 <Card.Content extra>
                     {/* <div className='ui two buttons'> */}
-                    <Button color='blue' floated="right">
+                    <Button color='blue' floated="right" onClick={handleRefund} loading={loaders.refund}>
                         Refund
+                        
                     </Button>
                   
                     {/* </div> */}
