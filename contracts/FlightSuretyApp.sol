@@ -19,7 +19,7 @@ contract FlightSuretyApp {
     // Declare varialble of Data Contract type
     FlightSuretyData flightSuretyData;
     uint256 private minFunding;
-    uint private flightNumber = 1;
+    // uint private flightNumber = 1;
     bool operational = true;
     address private dataContractAddress;
 
@@ -35,7 +35,7 @@ contract FlightSuretyApp {
 
     struct Flight {
         //bool isRegistered;
-        uint number;
+        // uint number;
         string flight;
         uint8 statusCode;
         uint256 updatedTimestamp;        
@@ -46,7 +46,7 @@ contract FlightSuretyApp {
     // because it is not possible to iterate through a mapping
     bytes32[] flightsArray;
 
-    event FlightRegistered(bytes32 key, uint number, address airline, string itinerary, uint256 time);
+    event FlightRegistered(bytes32 key, address airline, string itinerary, uint256 time);
 
     event Funded(address founder);
 
@@ -137,7 +137,7 @@ contract FlightSuretyApp {
         emit Operational(operational);
     }
 
-    function testAuthContractAccess() returns (bool) {
+    function testAuthContractAccess() public view requireContractOwner returns (bool) {
         return flightSuretyData.testAuthContractAccess();
     }
 
@@ -154,17 +154,17 @@ contract FlightSuretyApp {
         return flightSuretyData.getVotesCount(candidate);
     }
 
-    function getFlight(bytes32 key) public view returns (bytes32, uint, address, string, uint256, uint8) {
-        return (key, flights[key].number, flights[key].airline, flights[key].flight, flights[key].updatedTimestamp, flights[key].statusCode);
+    function getFlight(bytes32 key) public view returns (bytes32, address, string, uint256, uint8) {
+        return (key, flights[key].airline, flights[key].flight, flights[key].updatedTimestamp, flights[key].statusCode);
     }
 
     function getFlightsArray() public view returns(bytes32[]) {
         return flightsArray;
     }
 
-    function getFlightnumber() public view returns (uint256) {
-        return flightNumber;
-    }
+    // function getFlightnumber() public view returns (uint256) {
+    //     return flightNumber;
+    // }
 
     function getBalance() public view returns (uint256) {
 
@@ -211,12 +211,12 @@ contract FlightSuretyApp {
     * @dev Register a future flight for insuring.
     *
     */  
-    function registerFlight(address _airline, uint256 _timestamp, uint8 _statusCode, string _flight) requireHaveFunded {
+    function registerFlight(address _airline, string _flight, uint256 _timestamp) requireHaveFunded {
         bytes32 key = getFlightKey(_airline, _flight, _timestamp);
-        flights[key] = Flight(flightNumber, _flight, _statusCode, _timestamp, _airline);
+        flights[key] = Flight(_flight, 0, _timestamp, _airline);
         flightsArray.push(key);
-        emit FlightRegistered(key, flightNumber, _airline, _flight, _timestamp);
-        flightNumber = flightNumber.add(1);
+        emit FlightRegistered(key, _airline, _flight, _timestamp);
+        // flightNumber = flightNumber.add(1);
     }
 
     
@@ -396,7 +396,7 @@ contract FlightSuretyData {
     function getNumberOfFundingAirlines() external view returns (uint);
     function getAirlineInfo(address airlineAddress) public view returns (uint, string, bool, bool);
     function fund(address caller) external payable;
-    function testAuthContractAccess() returns (bool);
+    function testAuthContractAccess() external returns (bool);
     function getVotesCount(address airlineAddress) external view returns(uint);
     function hasNotVoted(address candidate, address voter) external view returns (bool);
     function registerVote(address candidate, address voter) external;

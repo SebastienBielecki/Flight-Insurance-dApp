@@ -95,7 +95,7 @@ const FlightTable = ({getBalance}) => {
         console.log(airline, itinerary, time);
         setLoaders({oracle: true, [key]: true})
         try {
-            let result = await contract.flightSuretyApp.methods.fetchFlightStatus(airline, itinerary, Number(time)).send({from: currentUser.account})
+            let result = await contract.flightSuretyApp.methods.fetchFlightStatus(airline, itinerary, time).send({from: currentUser.account})
             console.log(result);
             setLoaders({})
             setMessage({
@@ -114,7 +114,6 @@ const FlightTable = ({getBalance}) => {
         <Table celled inverted color="grey" size="large">
             <Table.Header>
                 <Table.Row>
-                    <Table.HeaderCell>FLIGHT #</Table.HeaderCell>
                     <Table.HeaderCell>AIRLINE</Table.HeaderCell>
                     <Table.HeaderCell>ITINERARY</Table.HeaderCell>
                     <Table.HeaderCell>ARRIVAL TIME</Table.HeaderCell>
@@ -125,13 +124,17 @@ const FlightTable = ({getBalance}) => {
             </Table.Header>
             <Table.Body>
                 {flights.map((flight, index) => {
-                    let airline = flight.airline ? flight.airline.substring(0,10) + "..." : "Undefined"
+                    const airline = flight.airline ? flight.airline.substring(0,10) + "..." : "Undefined"
+                    const date = new Date(flight.time * 1000);
+                    const hours = date.getHours()
+                    const minutes = date.getMinutes()
+                    
+                    console.log (date)
                     //let amountInsurance = props.contract.web3.utils.fromWei(insurance[index], "ether")
                     return (<Table.Row key={flight.key}>
-                            <Table.Cell>{flight.number}</Table.Cell>
                             <Table.Cell>{airline.toUpperCase()}</Table.Cell>
                             <Table.Cell>{flight.itinerary.toUpperCase()}</Table.Cell>
-                            <Table.Cell>{flight.time}</Table.Cell>
+                            <Table.Cell>{hours}:{minutes}</Table.Cell>
                             <Table.Cell>{contract.statusCodes[flight.statusCode]}</Table.Cell>
                             {(currentUser.profile === "Passenger" && insurance[index]=== "0.00" && flight.statusCode === "0") &&
                             <Table.HeaderCell>

@@ -36,14 +36,17 @@ const Airline = (props) => {
     }
 
     const handleSubmitFlight = async () => {
+        let today = new Date()
+        let time = new Date(today.getFullYear(), today.getMonth(), today.getDate(), flight.time.substring(0,2), flight.time.substring(3))
+        let timeUnix = Math.floor(time.getTime() / 1000)
         setLoaders({...loaders, regFlight: true})
         try {
             //generate a flight number
-            let number = await contract.flightSuretyApp.methods.getFlightnumber().call({from: currentUser.account})
-            setFlight(prev => {
-                return {...prev, number}
-            })
-            await contract.flightSuretyApp.methods.registerFlight(flight.airline, flight.time, 0, flight.itinerary).send({from: currentUser.account})
+            // let number = await contract.flightSuretyApp.methods.getFlightnumber().call({from: currentUser.account})
+            // setFlight(prev => {
+            //     return {...prev, number}
+            // })
+            await contract.flightSuretyApp.methods.registerFlight(flight.airline, flight.itinerary, timeUnix).send({from: currentUser.account})
         } catch (error) {
             handleError(error)
         }
@@ -64,7 +67,7 @@ const Airline = (props) => {
     const fund = async() => {
         setLoaders({...loaders, fund: true})
         try {
-            await contract.flightSuretyApp.methods.fund().send({from: currentUser.account, value: contract.web3.utils.toWei('1', 'ether')})
+            await contract.flightSuretyApp.methods.fund().send({from: currentUser.account, value: contract.web3.utils.toWei('10', 'ether')})
             getAirlineInfo()
         } catch (error) {
             handleError(error)
@@ -105,7 +108,7 @@ const Airline = (props) => {
                     {!airlineInfo.registered && <h2 className="wait-registered">Wait for being registered</h2>}
                     {(airlineInfo.registered && !airlineInfo.funded) && <div className="fund">
                         <p>Fund to participate to the insurance program</p>
-                        <Button loading={loaders.fund} onClick={() => fund()} primary>Fund 1 Ethers</Button>
+                        <Button loading={loaders.fund} onClick={() => fund()} primary>Fund 10 Ethers</Button>
                     </div>}
                     {(airlineInfo.registered && airlineInfo.funded) && <div className='register'>
                         <h2>Register or Vote for new Airline</h2>
@@ -125,7 +128,7 @@ const Airline = (props) => {
                         </Form.Field>
                         <Form.Field>
                             <label>Arrival Time</label>
-                            <input  onChange={handleFlightChange} placeholder="HH:MM" name="time" value={flight.time}/>
+                            <input type="time" onChange={handleFlightChange} placeholder="HH:MM" name="time" value={flight.time}/>
                         </Form.Field>
                         <Form.Button loading={loaders.regFlight} floated="right" type="submit">Submit</Form.Button>
                     </Form>

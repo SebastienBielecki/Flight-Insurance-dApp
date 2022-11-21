@@ -74,11 +74,10 @@ const App = () => {
       //console.log("Fetch FLight result: ",)
       let flight = {
         key: temp[0],
-        number: temp[1],
-        airline: temp[2],
-        itinerary: temp[3],
-        time: temp[4],
-        statusCode: temp[5]
+        airline: temp[1],
+        itinerary: temp[2],
+        time: temp[3],
+        statusCode: temp[4]
       }
       flightsTemp.push(flight)
     }
@@ -174,11 +173,11 @@ const App = () => {
             break
           case "FlightRegistered":
             console.log("FlightRegistered event")
-            let {key, number, airline, itinerary, time} = result.returnValues
+            let {key, airline, itinerary, time} = result.returnValues
             setMessage({
                 positive: true,
                 header: "Flight succesfully registered",
-                content: `Flight key: ${key} ${number} ${airline} ${itinerary} ${time}`,
+                content: `Airline ${airline} \nFlight: ${itinerary} \nTime: ${time}`,
                 display: true
             })
             fetchFlights()
