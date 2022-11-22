@@ -18,7 +18,7 @@ const Passenger = () => {
             let balance = await contract.web3.eth.getBalance(currentUser.account)
             balance = contract.web3.utils.fromWei(balance, "ether")
             balance = (Math.round(balance * 100) / 100).toFixed(2)
-            let credit = await contract.flightSuretyData.methods.getPassengerCredit(currentUser.account).call({from: currentUser.account})
+            let credit = await contract.flightSuretyApp.methods.getPassengerCredit().call({from: currentUser.account})
             credit = contract.web3.utils.fromWei(credit, "ether")
             credit = (Math.round(credit * 100) / 100).toFixed(2)
             setBalances({balance, credit})
@@ -34,7 +34,7 @@ const Passenger = () => {
     const handleRefund = async () => {
         setLoaders({refund: true})
         try {
-            await contract.flightSuretyData.methods.pay(currentUser.account).send({from: currentUser.account})
+            await contract.flightSuretyApp.methods.pay().send({from: currentUser.account})
             setLoaders({})
         } catch (error) {
             handleError(error)
@@ -75,7 +75,7 @@ const Passenger = () => {
                 <Card.Content extra>
                     {/* <div className='ui two buttons'> */}
                     <Button color='blue' floated="right" onClick={handleRefund} loading={loaders.refund}>
-                        Refund
+                        Send to personal Wallet
                         
                     </Button>
                   

@@ -34,16 +34,18 @@ For this project we are not interacting with real Oracles, and we are simulating
 ## Security
 The following patterns and practices are implemented:
 - Fail fast: test if conditions for calling a method are fulfilled as early as possible
-- Debit before Credit, to prevent re-entracy attack
+- Debit before Credit
 - SafeGuard in the payment methods to EOAs (Externally Owned Account), to detect recursion in a payment call (further protection against re-entrancy)
 - Pausable contract
 - Upgradable contract, with separation of Data and App Contract.
-- Test if a call is made by a Smart Contract or an EOA, and enables ownly calls from EOAs.
+- For the pay function (enabling passengers to send fund to their personal wallet: test if a call is made by a Smart Contract or an EOA, and enables owlly calls from EOAs.
 
 
 ## Install
 
 This repository contains Smart Contract code in Solidity (using Truffle), tests (also using Truffle), a dApp (using React) and a server app.
+
+Make sure you run Node.js v14.0.0
 
 To install, download or clone the repo, then:
 
@@ -77,6 +79,15 @@ To build dapp for prod:
 `npm run dapp:prod`
 
 Deploy the contents of the ./dapp folder
+
+## Test scenario
+For quick testing, some accounts have been pre-configured, please follow the following steps:
+1. Run Ganache on port 7545, and generate a wallet with 20 accounts minimum, with this mnemonic:
+"candy maple cake sugar pudding cream honey rich smooth crumble sweet treat"
+2. Account 0 is configured as Contract Owner, Account 1 to 5 are configured as Airlines, and accounts 6 to 10 are configured as Passengers.
+3. Connect as the Contract Owner with account 0. You need to authorize the App contract in the Data Contract
+4. Connect as the first airline with account 1. Account is pre registered, but you need to fund the contract to participate. You can then either: register a new airline, or register some flights. After 4 airlines have been registered and have paid their funding, register a new airline require 50% consensus (e.g. 2 votes in case of registering a 5th airline)
+5. Connect as a passenger using accounts 6 to 10. You can pay for an insurance, then request Oracles to porvide flight status. if flight was delayed due to airline responsibility, you can credit 1.5 times the amount you paid. You can then trnasfer credit to passenger's personal wallet. For quick testing, each even request to Oracles (request 2, 4, 6...) will generate a flight delayed due to airline responsibility.
 
 
 ## Resources

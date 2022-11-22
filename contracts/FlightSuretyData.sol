@@ -5,6 +5,8 @@ import "../node_modules/openzeppelin-solidity/contracts/math/SafeMath.sol";
 contract FlightSuretyData {
     using SafeMath for uint256;
 
+    uint256 private guardCounter = 1;
+
     // this variable will store authorized App contracts
     mapping(address => bool) authorizedAppContracts;
     /********************************************************************************************/
@@ -97,6 +99,13 @@ contract FlightSuretyData {
         _;
     }
 
+     modifier entrancyGuard() {
+        guardCounter = guardCounter.add(1);
+        uint256 localCounter = guardCounter;
+        _;
+        require(guardCounter == localCounter, "Re-entrancy detected");
+    }
+
 
 
     /********************************************************************************************/
@@ -155,20 +164,20 @@ contract FlightSuretyData {
         return (airlines[airlineAddress].id, airlines[airlineAddress].name, airlines[airlineAddress].isRegistered, airlines[airlineAddress].hasFunded);
     }
 
-    function getVotesCount(address airlineAddress) external view returns(uint) {
+    function getVotesCount(address airlineAddress) external view requireAuthorizedAppContract returns(uint) {
         return votesToRegister[airlineAddress].approvalCount;
     }
 
-    function hasNotVoted(address candidate, address voter) external view returns (bool) {
+    function hasNotVoted(address candidate, address voter) external view requireAuthorizedAppContract returns (bool) {
         return !votesToRegister[candidate].voteMap[voter];
     }
 
-    function registerVote(address candidate, address voter) external {
+    function registerVote(address candidate, address voter) external requireAuthorizedAppContract {
         votesToRegister[candidate].voteMap[voter] = true;
         votesToRegister[candidate].approvalCount =  votesToRegister[candidate].approvalCount.add(1);
     }
 
-    function getPassengerCredit(address passenger) public view returns(uint256) {
+    function getPassengerCredit(address passenger) external view requireAuthorizedAppContract returns(uint256) {
         return passengers[passenger].balance;
     }
 
@@ -192,11 +201,11 @@ contract FlightSuretyData {
     * @dev Buy insurance for a flight
     *
     */   
-    function buy(address _passenger, uint256 _amount, bytes32 _flight) external payable {
+    function buy(address _passenger, uint256 _amount, bytes32 _flight) external payable requireAuthorizedAppContract {
         passengers[_passenger].paidInsurance[_flight] = _amount;
     }
 
-    function getPaidInsurance(address passenger, bytes32[] flights) external view returns(uint256[] amounts) {
+    function getPaidInsurance(address passenger, bytes32[] flights) external view requireAuthorizedAppContract returns(uint256[] amounts) {
         //bytes32[] _flights;
         uint256[] memory _amounts = new uint256[](flights.length);
         for (uint i = 0; i < flights.length; i++) {
@@ -205,7 +214,7 @@ contract FlightSuretyData {
         return (_amounts);
     }
 
-    function getPaidInsuranceStatus(address passenger, bytes32[] flights) external view returns(bool[] refunded) {
+    function getPaidInsuranceStatus(address passenger, bytes32[] flights) external view requireAuthorizedAppContract returns(bool[] refunded) {
         //bytes32[] _flights;
         bool[] memory _refunded = new bool[](flights.length);
         for (uint i = 0; i < flights.length; i++) {
@@ -217,7 +226,7 @@ contract FlightSuretyData {
     /**
      *  @dev Credits payouts to insurees
     */
-    function creditInsurees(address passenger, bytes32 flightKey) external {
+    function creditInsurees(address passenger, bytes32 flightKey) external requireAuthorizedAppContract {
         require(!passengers[passenger].refundedInsurance[flightKey], "Already refunded");
         passengers[passenger].refundedInsurance[flightKey] = true;
         passengers[passenger].balance = passengers[passenger].balance.add(passengers[passenger].paidInsurance[flightKey].mul(3).div(2));
@@ -228,7 +237,7 @@ contract FlightSuretyData {
      *  @dev Transfers eligible payout funds to insuree
      *
     */
-    function pay(address passenger) external {
+    function pay(address passenger) external entrancyGuard requireAuthorizedAppContract {
         uint256 balance = passengers[passenger].balance;
         passengers[passenger].balance = 0;
         passenger.transfer(balance);
@@ -244,7 +253,7 @@ contract FlightSuretyData {
         haveFundedAirlinesTotal = haveFundedAirlinesTotal.add(1);
     }
 
-    function getFlightKey(address airline, string memory flight, uint256 timestamp) pure internal returns(bytes32) {
+    function getFlightKey(address airline, string memory flight, uint256 timestamp) view internal requireAuthorizedAppContract returns(bytes32) {
         return keccak256(abi.encodePacked(airline, flight, timestamp));
     }
 

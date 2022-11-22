@@ -18,8 +18,10 @@ const FlightTable = ({getBalance}) => {
         flights.forEach(element => {
             flightKeys.push(element.key)
         });
-        let insurances = await contract.flightSuretyData.methods.getPaidInsurance(currentUser.account, flightKeys).call({from: currentUser.account})
-        let insurancesRefunded = await contract.flightSuretyData.methods.getPaidInsuranceStatus(currentUser.account, flightKeys).call({from: currentUser.account})
+        // let insurances = await contract.flightSuretyData.methods.getPaidInsurance(currentUser.account, flightKeys).call({from: currentUser.account})
+        // let insurancesRefunded = await contract.flightSuretyData.methods.getPaidInsuranceStatus(currentUser.account, flightKeys).call({from: currentUser.account})
+        let insurances = await contract.flightSuretyApp.methods.getPaidInsurance(flightKeys).call({from: currentUser.account})
+        let insurancesRefunded = await contract.flightSuretyApp.methods.getPaidInsuranceStatus(flightKeys).call({from: currentUser.account})
         let insurancesEther = insurances.map(element => {
             let temp = contract.web3.utils.fromWei(element, "ether")
             return (Math.round(temp * 100) / 100).toFixed(2)
@@ -34,7 +36,7 @@ const FlightTable = ({getBalance}) => {
             if (flights[i].statusCode === "20" && insurance[i] !== "0" && !insuranceCredited[i]) {
                 try {
                     console.log("refund conidition met");
-                    await contract.flightSuretyData.methods.creditInsurees(currentUser.account, flights[i].key).send({from: currentUser.account})
+                    await contract.flightSuretyApp.methods.creditInsurees(flights[i].key).send({from: currentUser.account})
                 } catch (error) {
                     console.log(error.message);
                 }
@@ -173,17 +175,19 @@ const FlightTable = ({getBalance}) => {
                             </Table.HeaderCell>}
                             {(currentUser.profile === "Passenger" && insurance[index] !== "0.00" && !insuranceCredited[index] && flight.statusCode !== "20" && flight.statusCode !=="0") &&
                             <Table.HeaderCell>
-                                    Insurance paid ${insurance[index]} Ether
+                                    Insurance paid ${insurance[index]} Ether.
                                     <br></br>
                                     Not refundable (On time or no Airline responsiblity)
                             </Table.HeaderCell>}
                             {(currentUser.profile === "Passenger" && insurance[index] != "0.00" && !insuranceCredited[index] && flight.statusCode === "20") &&
                             <Table.HeaderCell>
-                                    Insurance paid ${insurance[index]} Ether
+                                    Insurance paid ${insurance[index]} Ether. 
+                                    <br></br>
+                                    Click "claim" to credit it 1.5x times.
                                     <Button 
                                         floated="right"
                                         onClick={() => creditInsuree(index)}>
-                                        Refund
+                                        Claim
                                     </Button>
                 
                             </Table.HeaderCell>}

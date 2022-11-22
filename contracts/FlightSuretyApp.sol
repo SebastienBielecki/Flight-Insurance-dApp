@@ -101,6 +101,11 @@ contract FlightSuretyApp {
         _;
     }
 
+    modifier onlyEOA() {
+        require(msg.sender == tx.origin);
+        _;
+    }
+
     /********************************************************************************************/
     /*                                       CONSTRUCTOR                                        */
     /********************************************************************************************/
@@ -182,10 +187,11 @@ contract FlightSuretyApp {
     */   
     function registerAirline(address _newAirlineAddress, string _airlineName) external requireHaveFunded requireHasNotVoted(_newAirlineAddress, msg.sender) returns(bool success, uint256 votes, uint256 requiredVotes) {
         uint numberOfAirlines = getNumberOfFundingAirlines();
-        // require(numberOfAirlines < 4, "more than 4 airlines");
+        // if less than 4 airlines are participating, they can register a new airline wihtout consensus
         if (numberOfAirlines < 4) {
             flightSuretyData.registerAirline(_newAirlineAddress, _airlineName);
             emit RegisteredAirline(true, 1, numberOfAirlines);
+        // for more than 4 airlines, 50% consensus is required
         } else {
             
             flightSuretyData.registerVote(_newAirlineAddress, msg.sender);
@@ -216,7 +222,6 @@ contract FlightSuretyApp {
         flights[key] = Flight(_flight, 0, _timestamp, _airline);
         flightsArray.push(key);
         emit FlightRegistered(key, _airline, _flight, _timestamp);
-        // flightNumber = flightNumber.add(1);
     }
 
     
@@ -228,9 +233,23 @@ contract FlightSuretyApp {
 
     event PaidInsurances(uint256[] amounts);
     function getPaidInsurance(bytes32[] _flights) public view returns(uint256[] amounts){
-        // returns(bytes32 memory keys[], uint256 memory amount[])
-        emit PaidInsurances(flightSuretyData.getPaidInsurance(msg.sender, _flights));
-        //return flightSuretyData.getPaidInsurance(msg.sender, _flights);
+        return flightSuretyData.getPaidInsurance(msg.sender, _flights);
+    }
+
+    function getPassengerCredit() public view returns(uint256) {
+        return flightSuretyData.getPassengerCredit(msg.sender);
+    }
+
+    function getPaidInsuranceStatus(bytes32[] _flights) public view returns (bool[] insurancesStatus) {
+        return flightSuretyData.getPaidInsuranceStatus(msg.sender, _flights);
+    }
+
+    function creditInsurees(bytes32 flightKey) external onlyEOA {
+        flightSuretyData.creditInsurees(msg.sender, flightKey);
+    }
+
+    function pay() public onlyEOA{
+        flightSuretyData.pay(msg.sender);
     }
 
     
@@ -402,6 +421,8 @@ contract FlightSuretyData {
     function registerVote(address candidate, address voter) external;
     function buy(address _passenger, uint256 _amount, bytes32 _flight) external payable;
     function getPaidInsurance(address passenger, bytes32[] flights) external view returns(uint256[]);
-
-
+    function getPaidInsuranceStatus(address passenger, bytes32[] flights) external view returns(bool[]);
+    function creditInsurees(address passenger, bytes32 flightKey) external;
+    function pay(address passenger) external;
+    function getPassengerCredit(address passenger) public view returns(uint256);
 }
