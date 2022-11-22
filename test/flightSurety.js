@@ -194,10 +194,10 @@ it(`Enabled airline can register a new flight`, async function () {
   }
 
   let key = await config.flightSuretyApp.getFlightKey(newFlight.airline, newFlight.flight, newFlight.updatedTimestamp);
-  await config.flightSuretyApp.registerFlight(newFlight.airline, newFlight.updatedTimestamp, newFlight.statusCode, newFlight.flight, {from: accounts[1]});
+  await config.flightSuretyApp.registerFlight(newFlight.airline, newFlight.flight, newFlight.updatedTimestamp, {from: accounts[1]});
   let result = await config.flightSuretyApp.getFlight.call(key);
-  assert.equal(result[2], accounts[1], "registered flight has not the correct airline")
-  assert.equal(result[3], "Mexico - Paris", "registered flight has not the correct itinerary")
+  assert.equal(result[1], accounts[1], "registered flight has not the correct airline")
+  assert.equal(result[2], "Mexico - Paris", "registered flight has not the correct itinerary")
 
 });
 

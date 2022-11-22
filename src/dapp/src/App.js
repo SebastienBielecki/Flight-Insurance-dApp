@@ -85,6 +85,16 @@ const App = () => {
     setFetching(false)
   }
 
+  // make the message disappear after 10 seconds
+  useEffect (() => {
+    if (message.display) {
+      setTimeout(() => setMessage({display: false}), 10000)
+    }
+  }, [message])
+
+
+
+  // set blockcahin events listeners
   useEffect(() => {
     let dataListener = contract.flightSuretyData.events.Authorized((error, result) => {
       console.log("authorized event from DATA SC");
@@ -191,7 +201,7 @@ const App = () => {
             setMessage({
               positive: true,
               header: "Insurance succesfully bought",
-              content: `flightKey ${flightKey} bought from ${buyer} for ${amount} Ethers`,
+              content: `Insurance bought from ${buyer} for ${amount} Ethers`,
               display: true
             })
             setLoaders({})
@@ -218,6 +228,10 @@ const App = () => {
         }
       }
     });
+    return () => {
+      dataListener = null
+      appListener = null
+    }
   }, [])
 
   useEffect(() => {

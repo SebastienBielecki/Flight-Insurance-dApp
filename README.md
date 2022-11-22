@@ -48,37 +48,28 @@ This repository contains Smart Contract code in Solidity (using Truffle), tests 
 Make sure you run Node.js v14.0.0
 
 To install, download or clone the repo, then:
+```
+cd Flight-Insurance-dApp
+npm install
+cd src/dapp
+npm install
+```
 
-`npm install`
-`truffle compile`
+## Testing
 
-## Develop Client
+Launch the dev environment, by:
 
-To run truffle tests:
-
-`truffle test ./test/flightSurety.js`
-`truffle test ./test/oracles.js`
-
-To use the front-end dapp:
-
-cd dapp
-npm start
-
+1. Start Ganache on HTTP://127.0.0.1:7545, and generate a wallet with at least 20 accounts, with this mnemonic: "candy maple cake sugar pudding cream honey rich smooth crumble sweet treat". It is important for the test scenario, because profiles (contract owner, airline, passenger) are preconfigured with those accounts.
+2. In the root folder (/Flight-Surety-dApp), deploy the smart contracts to the local blockchain:
+`truffle migrate --reset`
+3. Start the server, simulating the Oracles:
+`npm run server`
+4. Start the dApp front-end (built with React)
+`cd src/dapp`
+`npm start`
 To view dapp:
-
 `http://localhost:3006`
 
-## Develop Server
-
-`npm run server`
-`truffle test ./test/oracles.js`
-
-## Deploy
-
-To build dapp for prod:
-`npm run dapp:prod`
-
-Deploy the contents of the ./dapp folder
 
 ## Test scenario
 For quick testing, some accounts have been pre-configured, please follow the following steps:
@@ -90,6 +81,13 @@ For quick testing, some accounts have been pre-configured, please follow the fol
 5. Connect as a passenger using accounts 6 to 10. You can pay for an insurance, then request Oracles to porvide flight status. if flight was delayed due to airline responsibility, you can credit 1.5 times the amount you paid. You can then trnasfer credit to passenger's personal wallet. For quick testing, each even request to Oracles (request 2, 4, 6...) will generate a flight delayed due to airline responsibility.
 
 
+## Truffle tests:
+
+To run truffle tests:
+
+`truffle test ./test/flightSurety.js`
+`truffle test ./test/oracles.js`
+
 ## Resources
 
 * [How does Ethereum work anyway?](https://medium.com/@preethikasireddy/how-does-ethereum-work-anyway-22d1df506369)
@@ -100,3 +98,16 @@ For quick testing, some accounts have been pre-configured, please follow the fol
 * [Solidity Language Reference](http://solidity.readthedocs.io/en/v0.4.24/)
 * [Ethereum Blockchain Explorer](https://etherscan.io/)
 * [Web3Js Reference](https://github.com/ethereum/wiki/wiki/JavaScript-API)
+
+
+## License
+
+The MIT License (MIT)
+
+Copyright (c) 2015 Chris Kibble
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.

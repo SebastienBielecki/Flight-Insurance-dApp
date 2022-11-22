@@ -32,6 +32,7 @@ const Passenger = () => {
     },[currentUser])
 
     const handleRefund = async () => {
+        setMessage({display: false})
         setLoaders({refund: true})
         try {
             await contract.flightSuretyApp.methods.pay().send({from: currentUser.account})
@@ -45,7 +46,7 @@ const Passenger = () => {
 
     return (<>
         <Header as='h2' color="blue">Buy insurance</Header>
-        and get refunded 1.5 times if flight is late due to airline responsiblity
+        <p>Get refunded 1.5 times if flight is delayed due to airline responsiblity</p>
         <FlightTable
             getBalance={getBalance}
         />

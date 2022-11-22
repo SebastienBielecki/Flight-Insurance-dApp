@@ -31,16 +31,17 @@ const FlightTable = ({getBalance}) => {
     }
 
     const creditInsuree = async (i) => {
-            console.log("CREDIT INSUREE TRIGGERED");
-            console.log(insurance[i], insuranceCredited[i], flights[i].statusCode);
-            if (flights[i].statusCode === "20" && insurance[i] !== "0" && !insuranceCredited[i]) {
-                try {
-                    console.log("refund conidition met");
-                    await contract.flightSuretyApp.methods.creditInsurees(flights[i].key).send({from: currentUser.account})
-                } catch (error) {
-                    console.log(error.message);
-                }
+        setMessage({display: false})
+        console.log("CREDIT INSUREE TRIGGERED");
+        console.log(insurance[i], insuranceCredited[i], flights[i].statusCode);
+        if (flights[i].statusCode === "20" && insurance[i] !== "0" && !insuranceCredited[i]) {
+            try {
+                console.log("refund conidition met");
+                await contract.flightSuretyApp.methods.creditInsurees(flights[i].key).send({from: currentUser.account})
+            } catch (error) {
+                console.log(error.message);
             }
+        }
         await getBalance()
         await fetchPaidInsurance()
     }
@@ -130,9 +131,6 @@ const FlightTable = ({getBalance}) => {
                     const date = new Date(flight.time * 1000);
                     const hours = date.getHours()
                     const minutes = date.getMinutes()
-                    
-                    console.log (date)
-                    //let amountInsurance = props.contract.web3.utils.fromWei(insurance[index], "ether")
                     return (<Table.Row key={flight.key}>
                             <Table.Cell>{airline.toUpperCase()}</Table.Cell>
                             <Table.Cell>{flight.itinerary.toUpperCase()}</Table.Cell>

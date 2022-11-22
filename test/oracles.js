@@ -36,8 +36,16 @@ contract('Oracles', async (accounts) => {
   it('can request flight status', async () => {
     
     // ARRANGE
+    
     let flight = 'ND1309'; // Course number
     let timestamp = Math.floor(Date.now() / 1000);
+    const STATUS_CODE_UNKNOWN = 0;
+    const STATUS_CODE_ON_TIME = 10;
+    const STATUS_CODE_LATE_AIRLINE = 20;
+    const STATUS_CODE_LATE_WEATHER = 30;
+    const STATUS_CODE_LATE_TECHNICAL = 40;
+    const STATUS_CODE_LATE_OTHER = 50;
+    console.log("ON TIME STATUS CODE", STATUS_CODE_ON_TIME);
 
     // Submit a request for oracles to get status information for a flight
     await config.flightSuretyApp.fetchFlightStatus(config.firstAirline, flight, timestamp);
@@ -55,8 +63,9 @@ contract('Oracles', async (accounts) => {
 
         try {
           // Submit a response...it will only be accepted if there is an Index match
+          
           await config.flightSuretyApp.submitOracleResponse(oracleIndexes[idx], config.firstAirline, flight, timestamp, STATUS_CODE_ON_TIME, { from: accounts[a] });
-
+          console.log('\nSuccess', idx, oracleIndexes[idx].toNumber(), flight, timestamp);
         }
         catch(e) {
           // Enable this when debugging
